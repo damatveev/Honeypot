@@ -156,6 +156,65 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         );
     }
 
+    public function guardCustomerCreation($customer_data = array()) {
+        if (!$this->config->get('captcha_honeypot_status')) {
+            return true;
+        }
+
+        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
+
+        $customer_phone = '';
+        if (is_array($customer_data) && isset($customer_data['telephone']) && is_scalar($customer_data['telephone'])) {
+            $customer_phone = trim((string)$customer_data['telephone']);
+        } else {
+            $customer_phone = $this->getRegistrationPhone();
+        }
+
+        if ($customer_phone !== ''
+            && $this->config->get('captcha_honeypot_phone_check_status')
+            && !$this->isValidRegistrationPhone($customer_phone)) {
+            $this->logDetection('model_invalid_phone', $customer_phone, 0);
+            return false;
+        }
+
+        $token = isset($this->request->post['_hp_token']) ? (string)$this->request->post['_hp_token'] : '';
+
+        if ($token !== ''
+            && isset($this->session->data['honeypot_passed_tokens'][$token])
+            && is_array($this->session->data['honeypot_passed_tokens'][$token])) {
+            $passed_route = isset($this->session->data['honeypot_passed_tokens'][$token]['route'])
+                ? (string)$this->session->data['honeypot_passed_tokens'][$token]['route']
+                : '';
+
+            if ($passed_route === $route) {
+                return true;
+            }
+        }
+
+        $allowed_prefixes = array(
+            'checkout/uni_checkout',
+            'checkout/simplecheckout',
+            'extension/module/pp_login',
+            'extension/module/amazon_login',
+            'extension/module/amazon_pay'
+        );
+
+        foreach ($allowed_prefixes as $prefix) {
+            if ($route === $prefix || strpos($route, $prefix . '/') === 0) {
+                $this->logDetection('customer_create_unverified', '', 0);
+                return true;
+            }
+        }
+
+        if ($route === '') {
+            $this->logDetection('customer_create_unverified', 'empty_route', 0);
+            return true;
+        }
+
+        $this->logDetection('unprotected_create', '', 0);
+        return false;
+    }
+
     public function consume() {
         $token = isset($this->request->post['_hp_token']) ? (string)$this->request->post['_hp_token'] : '';
 
@@ -336,7 +395,11 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
     }
 
     private function validateRegistrationPhone() {
-        $phone = $this->getRegistrationPhone();
+        return $this->isValidRegistrationPhone($this->getRegistrationPhone());
+    }
+
+    private function isValidRegistrationPhone($phone) {
+        $phone = trim((string)$phone);
         if ($phone === '') {
             return false;
         }

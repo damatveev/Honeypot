@@ -1,22 +1,22 @@
 # Honeypot Anti-Spam CAPTCHA for OpenCart 3 / LiveStore
 
-[![Version](https://img.shields.io/badge/version-1.3.5-blue.svg)](https://github.com/damatveev/Honeypot/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/damatveev/Honeypot/releases)
 [![OpenCart](https://img.shields.io/badge/OpenCart-3.x-blue.svg)](https://www.opencart.com/)
 [![PHP](https://img.shields.io/badge/PHP-7.2--8.1-777bb4.svg)](https://www.php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Honeypot Anti-Spam CAPTCHA 1.3.5** — многоуровневая защита регистрации и стандартных и AJAX-форм OpenCart 3.x / LiveStore, включая Simple и Uni Login Register. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
+**Honeypot Anti-Spam CAPTCHA 1.4.0** — многоуровневая защита регистрации и стандартных и AJAX-форм OpenCart 3.x / LiveStore, включая Simple и Uni Login Register. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
 
 ## Yandex SmartCaptcha
 
-В версии 1.3.5 Yandex SmartCaptcha встроена в Honeypot как отдельный блок настроек.
+В версии 1.4.0 Yandex SmartCaptcha встроена в Honeypot как отдельный блок настроек.
 
 Доступны два режима:
 
 - **Стандартный модуль Yandex** — используются `captcha_yandex_key` и `captcha_yandex_secret`, уже сохранённые в OpenCart/LiveStore.
 - **Собственные ключи Honeypot** — Site key и Secret key задаются непосредственно в настройках Honeypot. Это позволяет использовать SmartCaptcha даже если отдельный модуль Yandex в магазине не установлен или не настроен.
 
-Для регистрации можно отдельно включить вывод SmartCaptcha. Полученный `smart-token` обязательно проверяется на сервере через API Yandex `smartcaptcha.yandexcloud.net/validate`.
+Для регистрации можно отдельно включить вывод SmartCaptcha. Полученный `smart-token` обязательно проверяется на сервере через API Yandex `smartcaptcha.cloud.yandex.ru/validate`.
 
 Если Yandex уже выбрана основной CAPTCHA OpenCart для страницы регистрации, Honeypot не выводит второй виджет и не дублирует проверку.
 
@@ -26,7 +26,7 @@
 
 ## Серверная проверка телефона
 
-В 1.3.5 добавлена независимая серверная проверка поля `telephone` на регистрации. Она работает даже если бот обходит JavaScript-маску браузера.
+В 1.4.0 добавлена независимая серверная проверка поля `telephone` на регистрации. Она работает даже если бот обходит JavaScript-маску браузера.
 
 По умолчанию:
 
@@ -51,6 +51,7 @@
 - автономная Yandex SmartCaptcha;
 - использование ключей стандартного Yandex-модуля или собственных ключей;
 - серверная проверка телефона;
+- финальный firewall перед `addCustomer`, блокирующий неизвестные обходные маршруты;
 - журнал причин блокировки;
 - опциональное журналирование успешного прохождения регистрации (`registration_passed`);
 - фильтры и статистика;
@@ -60,11 +61,11 @@
 
 ## Причины в журнале
 
-`honeypot`, `too_fast`, `invalid_token`, `missing_session`, `expired_token`, `client_mismatch`, `missing_trap`, `js_check`, `rate_limit`, `invalid_phone`, `yandex_failed`, `registration_passed`.
+`honeypot`, `too_fast`, `invalid_token`, `missing_session`, `expired_token`, `client_mismatch`, `missing_trap`, `js_check`, `rate_limit`, `invalid_phone`, `model_invalid_phone`, `unprotected_create`, `customer_create_unverified`, `yandex_failed`, `registration_passed`.
 
 ## Установка
 
-1. Скачайте `dist/honeypot_antispam_captcha_v1.3.5.ocmod.zip`.
+1. Скачайте `dist/honeypot_antispam_captcha_v1.4.0.ocmod.zip`.
 2. Откройте `Дополнения → Установка дополнений` и загрузите ZIP.
 3. Перейдите в `Дополнения → Дополнения → CAPTCHA`.
 4. Установите и откройте **Honeypot Anti-Spam**.
