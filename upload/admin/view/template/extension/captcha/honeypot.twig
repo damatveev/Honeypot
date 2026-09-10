@@ -1,19 +1,9 @@
 {{ header }}{{ column_left }}
 <div id="content">
-  <div class="page-header">
-    <div class="container-fluid">
-      <div class="pull-right">
-        <button type="submit" form="form-honeypot" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
-        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
-      </div>
-      <h1>{{ heading_title }}</h1>
-      <ul class="breadcrumb">{% for breadcrumb in breadcrumbs %}<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>{% endfor %}</ul>
-    </div>
-  </div>
+  <div class="page-header"><div class="container-fluid"><div class="pull-right"><button type="submit" form="form-honeypot" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button><a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a></div><h1>{{ heading_title }}</h1><ul class="breadcrumb">{% for breadcrumb in breadcrumbs %}<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>{% endfor %}</ul></div></div>
   <div class="container-fluid">
     {% if error_warning %}<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}<button type="button" class="close" data-dismiss="alert">&times;</button></div>{% endif %}
     {% if success %}<div class="alert alert-success alert-dismissible"><i class="fa fa-check-circle"></i> {{ success }}<button type="button" class="close" data-dismiss="alert">&times;</button></div>{% endif %}
-
     <div class="alert alert-info"><i class="fa fa-info-circle"></i> {{ text_how_it_works }}<br><small>{{ help_enable }}</small></div>
     <div class="alert alert-success"><strong>{{ text_coexist }}:</strong> {{ text_coexist_help }}</div>
 
@@ -24,54 +14,38 @@
       <div class="col-sm-3"><div class="panel panel-default"><div class="panel-body text-center"><strong style="font-size:24px;">{{ stats.unique_email }}</strong><br>{{ text_unique_email }}</div></div></div>
     </div>
 
-    <div class="panel panel-default">
-      <div class="panel-heading"><h3 class="panel-title"><i class="fa fa-shield"></i> {{ text_settings }}</h3></div>
-      <div class="panel-body">
-        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-honeypot" class="form-horizontal">
-          <div class="form-group"><label class="col-sm-3 control-label">{{ entry_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_status" class="form-control"><option value="1" {% if captcha_honeypot_status %}selected{% endif %}>{{ text_enabled }}</option><option value="0" {% if not captcha_honeypot_status %}selected{% endif %}>{{ text_disabled }}</option></select></div></div>
-          <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_min_seconds }}">{{ entry_min_seconds }}</span></label><div class="col-sm-9"><input type="number" min="0" max="30" name="captcha_honeypot_min_seconds" value="{{ captcha_honeypot_min_seconds }}" class="form-control"></div></div>
-          <div class="form-group"><label class="col-sm-3 control-label">{{ entry_time_check_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_time_check_status" class="form-control"><option value="1" {% if captcha_honeypot_time_check_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_time_check_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
-          <div class="form-group"><label class="col-sm-3 control-label">{{ entry_log_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_log_status" class="form-control"><option value="1" {% if captcha_honeypot_log_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_log_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
-          <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_retention_days }}">{{ entry_retention_days }}</span></label><div class="col-sm-9"><input type="number" min="1" max="3650" name="captcha_honeypot_retention_days" value="{{ captcha_honeypot_retention_days }}" class="form-control"></div></div>
-        </form>
-        <p class="text-muted"><small>{{ text_privacy }}</small></p>
-      </div>
-    </div>
+    <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title"><i class="fa fa-shield"></i> {{ text_settings }}</h3></div><div class="panel-body">
+      <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-honeypot" class="form-horizontal">
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_status" class="form-control"><option value="1" {% if captcha_honeypot_status %}selected{% endif %}>{{ text_enabled }}</option><option value="0" {% if not captcha_honeypot_status %}selected{% endif %}>{{ text_disabled }}</option></select></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_min_seconds }}">{{ entry_min_seconds }}</span></label><div class="col-sm-9"><input type="number" min="0" max="30" name="captcha_honeypot_min_seconds" value="{{ captcha_honeypot_min_seconds }}" class="form-control"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_time_check_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_time_check_status" class="form-control"><option value="1" {% if captcha_honeypot_time_check_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_time_check_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_js_check }}">{{ entry_js_check_status }}</span></label><div class="col-sm-9"><select name="captcha_honeypot_js_check_status" class="form-control"><option value="1" {% if captcha_honeypot_js_check_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_js_check_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_token_ttl }}">{{ entry_token_ttl }}</span></label><div class="col-sm-9"><input type="number" min="60" max="7200" name="captcha_honeypot_token_ttl" value="{{ captcha_honeypot_token_ttl }}" class="form-control"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_rate_limit }}">{{ entry_rate_limit_status }}</span></label><div class="col-sm-9"><select name="captcha_honeypot_rate_limit_status" class="form-control"><option value="1" {% if captcha_honeypot_rate_limit_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_rate_limit_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_rate_limit }}</label><div class="col-sm-9"><input type="number" min="1" max="100" name="captcha_honeypot_rate_limit" value="{{ captcha_honeypot_rate_limit }}" class="form-control"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_rate_window }}</label><div class="col-sm-9"><input type="number" min="60" max="86400" name="captcha_honeypot_rate_window" value="{{ captcha_honeypot_rate_window }}" class="form-control"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_block_seconds }}</label><div class="col-sm-9"><input type="number" min="60" max="86400" name="captcha_honeypot_block_seconds" value="{{ captcha_honeypot_block_seconds }}" class="form-control"></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label">{{ entry_log_status }}</label><div class="col-sm-9"><select name="captcha_honeypot_log_status" class="form-control"><option value="1" {% if captcha_honeypot_log_status %}selected{% endif %}>{{ text_yes }}</option><option value="0" {% if not captcha_honeypot_log_status %}selected{% endif %}>{{ text_no }}</option></select></div></div>
+        <div class="form-group"><label class="col-sm-3 control-label"><span data-toggle="tooltip" title="{{ help_retention_days }}">{{ entry_retention_days }}</span></label><div class="col-sm-9"><input type="number" min="1" max="3650" name="captcha_honeypot_retention_days" value="{{ captcha_honeypot_retention_days }}" class="form-control"></div></div>
+      </form>
+      <p class="text-muted"><small>{{ text_privacy }}</small></p>
+    </div></div>
 
-    <div class="panel panel-default">
-      <div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> {{ text_journal }}</h3></div>
-      <div class="panel-body">
-        <form action="{{ filter_action }}" method="get" class="form-inline" style="margin-bottom:15px;">
-          <input type="hidden" name="route" value="extension/captcha/honeypot"><input type="hidden" name="user_token" value="{{ user_token }}">
-          <div class="form-group"><input type="text" name="filter_email" value="{{ filter_email }}" placeholder="{{ entry_filter_email }}" class="form-control"></div>
-          <div class="form-group"><input type="text" name="filter_ip" value="{{ filter_ip }}" placeholder="{{ entry_filter_ip }}" class="form-control"></div>
-          <div class="form-group"><select name="filter_reason" class="form-control"><option value="">{{ entry_filter_reason }}</option><option value="honeypot" {% if filter_reason == 'honeypot' %}selected{% endif %}>{{ reason_honeypot }}</option><option value="too_fast" {% if filter_reason == 'too_fast' %}selected{% endif %}>{{ reason_too_fast }}</option><option value="invalid_token" {% if filter_reason == 'invalid_token' %}selected{% endif %}>{{ reason_invalid_token }}</option></select></div>
-          <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> {{ button_filter }}</button>
-          <a href="{{ clear }}" class="btn btn-danger pull-right" onclick="return confirm('{{ button_clear }}?');"><i class="fa fa-trash"></i> {{ button_clear }}</a>
-        </form>
+    <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title"><i class="fa fa-list"></i> {{ text_journal }}</h3></div><div class="panel-body">
+      <form action="{{ filter_action }}" method="get" class="form-inline" style="margin-bottom:15px;">
+        <input type="hidden" name="route" value="extension/captcha/honeypot"><input type="hidden" name="user_token" value="{{ user_token }}">
+        <div class="form-group"><input type="text" name="filter_email" value="{{ filter_email }}" placeholder="{{ entry_filter_email }}" class="form-control"></div>
+        <div class="form-group"><input type="text" name="filter_ip" value="{{ filter_ip }}" placeholder="{{ entry_filter_ip }}" class="form-control"></div>
+        <div class="form-group"><select name="filter_reason" class="form-control"><option value="">{{ entry_filter_reason }}</option><option value="honeypot">{{ reason_honeypot }}</option><option value="too_fast">{{ reason_too_fast }}</option><option value="invalid_token">{{ reason_invalid_token }}</option><option value="missing_session">{{ reason_missing_session }}</option><option value="expired_token">{{ reason_expired_token }}</option><option value="client_mismatch">{{ reason_client_mismatch }}</option><option value="missing_trap">{{ reason_missing_trap }}</option><option value="js_check">{{ reason_js_check }}</option><option value="rate_limit">{{ reason_rate_limit }}</option><option value="yandex_failed">{{ reason_yandex_failed }}</option></select></div>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> {{ button_filter }}</button>
+        <a href="{{ clear }}" class="btn btn-danger pull-right" onclick="return confirm('{{ button_clear }}?');"><i class="fa fa-trash"></i> {{ button_clear }}</a>
+      </form>
+      <div class="table-responsive"><table class="table table-bordered table-hover"><thead><tr><th>{{ column_date_added }}</th><th>{{ column_route }}</th><th>{{ column_email }}</th><th>{{ column_name }}</th><th>{{ column_ip }}</th><th>{{ column_reason }}</th><th>{{ column_elapsed }}</th><th>{{ column_user_agent }}</th><th>{{ column_trap }}</th></tr></thead><tbody>
+      {% if logs %}{% for log in logs %}<tr><td style="white-space:nowrap;">{{ log.date_added }}</td><td>{{ log.route }}</td><td>{{ log.email }}</td><td>{{ log.name }}</td><td style="white-space:nowrap;">{{ log.ip }}</td><td>{% if attribute(_context, 'reason_' ~ log.reason) is defined %}{{ attribute(_context, 'reason_' ~ log.reason) }}{% else %}{{ log.reason }}{% endif %}</td><td>{{ log.elapsed }}</td><td style="max-width:250px;word-break:break-word;">{{ log.user_agent }}</td><td style="max-width:180px;word-break:break-word;">{{ log.trap_value }}</td></tr>{% endfor %}{% else %}<tr><td colspan="9" class="text-center">{{ text_no_results }}</td></tr>{% endif %}
+      </tbody></table></div><div class="row"><div class="col-sm-6 text-left">{{ pagination }}</div><div class="col-sm-6 text-right">{{ results }}</div></div>
+    </div></div>
 
-        <div class="table-responsive"><table class="table table-bordered table-hover"><thead><tr><th>{{ column_date_added }}</th><th>{{ column_route }}</th><th>{{ column_email }}</th><th>{{ column_name }}</th><th>{{ column_ip }}</th><th>{{ column_reason }}</th><th>{{ column_elapsed }}</th><th>{{ column_user_agent }}</th><th>{{ column_trap }}</th></tr></thead><tbody>
-        {% if logs %}{% for log in logs %}<tr><td style="white-space:nowrap;">{{ log.date_added }}</td><td>{{ log.route }}</td><td>{{ log.email }}</td><td>{{ log.name }}</td><td style="white-space:nowrap;">{{ log.ip }}</td><td>{% if log.reason == 'honeypot' %}{{ reason_honeypot }}{% elseif log.reason == 'too_fast' %}{{ reason_too_fast }}{% elseif log.reason == 'invalid_token' %}{{ reason_invalid_token }}{% else %}{{ log.reason }}{% endif %}</td><td>{{ log.elapsed }}</td><td style="max-width:250px;word-break:break-word;">{{ log.user_agent }}</td><td style="max-width:180px;word-break:break-word;">{{ log.trap_value }}</td></tr>{% endfor %}{% else %}<tr><td colspan="9" class="text-center">{{ text_no_results }}</td></tr>{% endif %}
-        </tbody></table></div>
-        <div class="row"><div class="col-sm-6 text-left">{{ pagination }}</div><div class="col-sm-6 text-right">{{ results }}</div></div>
-      </div>
-    </div>
-
-    <div class="panel panel-default">
-      <div class="panel-heading"><h3 class="panel-title"><i class="fa fa-heart"></i> {{ text_donate }}</h3></div>
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-sm-2 text-center">
-            <a href="{{ donate_url }}" target="_blank" rel="noopener noreferrer"><img src="{{ donate_qr }}" alt="QR Donate" style="max-width:150px;width:100%;height:auto;"></a>
-          </div>
-          <div class="col-sm-10">
-            <p>{{ text_donate_help }}</p>
-            <p><a href="{{ donate_url }}" target="_blank" rel="noopener noreferrer">{{ donate_url }}</a></p>
-            <p class="text-muted"><small>Honeypot Anti-Spam {{ version }} — Dmitry Matveev, d.a.matveev@gmail.com</small></p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title"><i class="fa fa-heart"></i> {{ text_donate }}</h3></div><div class="panel-body"><div class="row"><div class="col-sm-2 text-center"><a href="{{ donate_url }}" target="_blank" rel="noopener noreferrer"><img src="{{ donate_qr }}" alt="QR Donate" style="max-width:150px;width:100%;height:auto;"></a></div><div class="col-sm-10"><p>{{ text_donate_help }}</p><p><a href="{{ donate_url }}" target="_blank" rel="noopener noreferrer">{{ donate_url }}</a></p><p class="text-muted"><small>Honeypot Anti-Spam {{ version }} — Dmitry Matveev, d.a.matveev@gmail.com</small></p></div></div></div></div>
   </div>
 </div>
 {{ footer }}
