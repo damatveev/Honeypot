@@ -2,118 +2,77 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
-
-  <!-- Honeypot runs in addition to the selected OpenCart CAPTCHA. -->
 
   <file path="catalog/controller/account/register.php">
     <operation>
       <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'), $this->error);]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
-			}
+            if ($this->config->get('captcha_honeypot_status')) {
+                $yandex_ready = $this->config->get('captcha_yandex_status') && $this->config->get('captcha_yandex_key') && $this->config->get('captcha_yandex_secret');
+                $yandex_primary = $this->config->get('config_captcha') == 'yandex';
+                if ($yandex_ready && !$yandex_primary) {
+                    $data['captcha'] .= $this->load->controller('extension/captcha/yandex', $this->error);
+                }
+                $data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
+            }
       ]]></add>
     </operation>
     <operation>
       <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-				if ($honeypot) {
-					$this->error['captcha'] = $honeypot;
-				}
-			}
+            if ($this->config->get('captcha_honeypot_status')) {
+                $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+                if ($honeypot) {
+                    $this->error['captcha'] = $honeypot;
+                }
+            }
       ]]></add>
     </operation>
   </file>
 
-  <file path="catalog/controller/checkout/register.php">
-    <operation>
-      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'));]]></search>
-      <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
-			}
-      ]]></add>
-    </operation>
-    <operation>
-      <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
-      <add position="after"><![CDATA[
-				if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-					$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-					if ($honeypot) {
-						$json['error']['captcha'] = $honeypot;
-					}
-				}
-      ]]></add>
-    </operation>
-  </file>
-
-  <file path="catalog/controller/checkout/guest.php">
-    <operation>
-      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'));]]></search>
-      <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
-			}
-      ]]></add>
-    </operation>
-    <operation>
-      <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
-      <add position="after"><![CDATA[
-				if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-					$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-					if ($honeypot) {
-						$json['error']['captcha'] = $honeypot;
-					}
-				}
-      ]]></add>
-    </operation>
-  </file>
-
-  <file path="catalog/controller/information/contact.php">
-    <operation>
-      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'), $this->error);]]></search>
-      <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
-			}
-      ]]></add>
-    </operation>
-    <operation>
-      <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
-      <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-				if ($honeypot) {
-					$this->error['captcha'] = $honeypot;
-				}
-			}
-      ]]></add>
-    </operation>
-  </file>
-
-  <file path="catalog/controller/account/return.php">
+  <file path="catalog/controller/checkout/register.php|catalog/controller/checkout/guest.php">
     <operation error="skip">
-      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'), $this->error);]]></search>
+      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'));]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
-			}
+            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                $data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
+            }
       ]]></add>
     </operation>
     <operation error="skip">
       <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-				if ($honeypot) {
-					$this->error['captcha'] = $honeypot;
-				}
-			}
+                if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                    $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+                    if ($honeypot) {
+                        $json['error']['captcha'] = $honeypot;
+                    }
+                }
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/information/contact.php|catalog/controller/account/return.php">
+    <operation error="skip">
+      <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'), $this->error);]]></search>
+      <add position="after"><![CDATA[
+            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                $data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
+            }
+      ]]></add>
+    </operation>
+    <operation error="skip">
+      <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
+      <add position="after"><![CDATA[
+            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+                if ($honeypot) {
+                    $this->error['captcha'] = $honeypot;
+                }
+            }
       ]]></add>
     </operation>
   </file>
@@ -122,20 +81,20 @@
     <operation error="skip">
       <search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'));]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
-			}
+            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                $data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
+            }
       ]]></add>
     </operation>
     <operation error="skip">
       <search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search>
       <add position="after"><![CDATA[
-			if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
-				$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-				if ($honeypot) {
-					$json['error'] = $honeypot;
-				}
-			}
+            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+                if ($honeypot) {
+                    $json['error'] = $honeypot;
+                }
+            }
       ]]></add>
     </operation>
   </file>
