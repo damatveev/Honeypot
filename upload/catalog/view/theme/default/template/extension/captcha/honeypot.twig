@@ -1,3 +1,17 @@
+{% if yandex_enabled %}
+<script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
+<fieldset class="hp-yandex-smartcaptcha">
+  <legend>Yandex SmartCaptcha</legend>
+  <div class="form-group required">
+    <label class="col-sm-2 control-label">Проверка</label>
+    <div class="col-sm-10">
+      <div class="smart-captcha" data-sitekey="{{ yandex_site_key }}"></div>
+      {% if yandex_error %}<div class="text-danger">{{ yandex_error }}</div>{% endif %}
+    </div>
+  </div>
+</fieldset>
+{% endif %}
+
 <div class="hp-antispam" aria-hidden="true" style="position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;">
   <label for="{{ field_name }}">Website</label>
   <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
