@@ -45,7 +45,7 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         }
 
         $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
-        $ip = isset($this->request->server['REMOTE_ADDR']) ? (string)$this->request->server['REMOTE_ADDR'] : '';
+        $ip = $this->getClientIp();
         $rate = $this->registerAttempt($ip, $route);
 
         if ($rate['blocked']) {
@@ -115,6 +115,70 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
                 return $this->getErrorMessage();
             }
         }
+
+        if ($this->shouldVerifyYandexRegistration() && !$this->verifyYandexSmartCaptcha()) {
+            $this->logDetection('yandex_failed', '', $elapsed);
+            return $this->getErrorMessage();
+        }
+    }
+
+    private function shouldVerifyYandexRegistration() {
+        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
+        if ($route !== 'account/register' || !$this->isYandexReady()) {
+            return false;
+        }
+
+        $pages = (array)$this->config->get('config_captcha_page');
+        $primary_yandex = $this->config->get('config_captcha') === 'yandex'
+            && $this->config->get('captcha_yandex_status')
+            && in_array('register', $pages);
+
+        return !$primary_yandex;
+    }
+
+    private function isYandexReady() {
+        return (bool)$this->config->get('captcha_yandex_status')
+            && (string)$this->config->get('captcha_yandex_key') !== ''
+            && (string)$this->config->get('captcha_yandex_secret') !== '';
+    }
+
+    private function verifyYandexSmartCaptcha() {
+        if (empty($this->request->post['smart-token'])) {
+            return false;
+        }
+
+        $args = http_build_query(array(
+            'secret' => $this->config->get('captcha_yandex_secret'),
+            'token' => (string)$this->request->post['smart-token'],
+            'ip' => $this->getClientIp()
+        ));
+
+        $ch = curl_init('https://smartcaptcha.yandexcloud.net/validate?' . $args);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        $response = curl_exec($ch);
+        $httpcode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpcode !== 200 || !$response) {
+            return false;
+        }
+
+        $result = json_decode($response, true);
+        return is_array($result) && isset($result['status']) && $result['status'] === 'ok';
+    }
+
+    private function getClientIp() {
+        $ip = '';
+        if (!empty($this->request->server['HTTP_CF_CONNECTING_IP'])) {
+            $ip = (string)$this->request->server['HTTP_CF_CONNECTING_IP'];
+        } elseif (!empty($this->request->server['HTTP_X_FORWARDED_FOR'])) {
+            $parts = explode(',', (string)$this->request->server['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($parts[0]);
+        } elseif (!empty($this->request->server['REMOTE_ADDR'])) {
+            $ip = (string)$this->request->server['REMOTE_ADDR'];
+        }
+        return $this->limit($ip, 45);
     }
 
     private function getErrorMessage() {
@@ -200,7 +264,7 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         }
 
         $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
-        $ip = isset($this->request->server['REMOTE_ADDR']) ? (string)$this->request->server['REMOTE_ADDR'] : '';
+        $ip = $this->getClientIp();
         $user_agent = isset($this->request->server['HTTP_USER_AGENT']) ? (string)$this->request->server['HTTP_USER_AGENT'] : '';
         $request_uri = isset($this->request->server['REQUEST_URI']) ? (string)$this->request->server['REQUEST_URI'] : '';
 
