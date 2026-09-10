@@ -36,6 +36,19 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $data['js_name'] = '_hp_js_' . substr(hash('sha256', $token . ':js'), 0, 8);
         $data['js_value'] = substr(hash('sha256', $token . ':ok'), 0, 20);
 
+        $data['yandex_enabled'] = false;
+        $data['yandex_site_key'] = '';
+        $data['yandex_error'] = '';
+
+        if ($this->shouldRenderYandexRegistration()) {
+            $keys = $this->getYandexKeys();
+            $data['yandex_enabled'] = !empty($keys['site_key']);
+            $data['yandex_site_key'] = $keys['site_key'];
+            if (isset($error['captcha'])) {
+                $data['yandex_error'] = $error['captcha'];
+            }
+        }
+
         return $this->load->view('extension/captcha/honeypot', $data);
     }
 
@@ -116,30 +129,61 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             }
         }
 
+        if ($route === 'account/register' && $this->config->get('captcha_honeypot_phone_check_status')) {
+            if (!$this->validateRegistrationPhone()) {
+                $this->logDetection('invalid_phone', isset($this->request->post['telephone']) ? (string)$this->request->post['telephone'] : '', $elapsed);
+                return $this->getErrorMessage();
+            }
+        }
+
         if ($this->shouldVerifyYandexRegistration() && !$this->verifyYandexSmartCaptcha()) {
             $this->logDetection('yandex_failed', '', $elapsed);
             return $this->getErrorMessage();
         }
+
+        if ($route === 'account/register' && $this->config->get('captcha_honeypot_log_success_status')) {
+            $this->logDetection('registration_passed', '', $elapsed);
+        }
+    }
+
+    private function shouldRenderYandexRegistration() {
+        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
+        return $route === 'account/register'
+            && $this->config->get('captcha_honeypot_yandex_status')
+            && $this->config->get('captcha_honeypot_yandex_register_status')
+            && !$this->isPrimaryYandexRegistration()
+            && $this->isYandexReady();
     }
 
     private function shouldVerifyYandexRegistration() {
-        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
-        if ($route !== 'account/register' || !$this->isYandexReady()) {
-            return false;
-        }
+        return $this->shouldRenderYandexRegistration();
+    }
 
+    private function isPrimaryYandexRegistration() {
         $pages = (array)$this->config->get('config_captcha_page');
-        $primary_yandex = $this->config->get('config_captcha') === 'yandex'
+        return $this->config->get('config_captcha') === 'yandex'
             && $this->config->get('captcha_yandex_status')
             && in_array('register', $pages);
+    }
 
-        return !$primary_yandex;
+    private function getYandexKeys() {
+        $source = (string)$this->config->get('captcha_honeypot_yandex_source');
+        if ($source === 'standard') {
+            return array(
+                'site_key' => trim((string)$this->config->get('captcha_yandex_key')),
+                'secret' => trim((string)$this->config->get('captcha_yandex_secret'))
+            );
+        }
+
+        return array(
+            'site_key' => trim((string)$this->config->get('captcha_honeypot_yandex_key')),
+            'secret' => trim((string)$this->config->get('captcha_honeypot_yandex_secret'))
+        );
     }
 
     private function isYandexReady() {
-        return (bool)$this->config->get('captcha_yandex_status')
-            && (string)$this->config->get('captcha_yandex_key') !== ''
-            && (string)$this->config->get('captcha_yandex_secret') !== '';
+        $keys = $this->getYandexKeys();
+        return $keys['site_key'] !== '' && $keys['secret'] !== '';
     }
 
     private function verifyYandexSmartCaptcha() {
@@ -147,15 +191,20 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             return false;
         }
 
+        $keys = $this->getYandexKeys();
+        if ($keys['secret'] === '') {
+            return false;
+        }
+
         $args = http_build_query(array(
-            'secret' => $this->config->get('captcha_yandex_secret'),
+            'secret' => $keys['secret'],
             'token' => (string)$this->request->post['smart-token'],
             'ip' => $this->getClientIp()
         ));
 
         $ch = curl_init('https://smartcaptcha.yandexcloud.net/validate?' . $args);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = curl_exec($ch);
         $httpcode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
@@ -166,6 +215,34 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
 
         $result = json_decode($response, true);
         return is_array($result) && isset($result['status']) && $result['status'] === 'ok';
+    }
+
+    private function validateRegistrationPhone() {
+        $phone = isset($this->request->post['telephone']) ? trim((string)$this->request->post['telephone']) : '';
+        if ($phone === '') {
+            return false;
+        }
+
+        if (!preg_match('/^[0-9+()\-\s]+$/u', $phone)) {
+            return false;
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone);
+        $length = strlen($digits);
+        if ($length < 10 || $length > 11) {
+            return false;
+        }
+
+        if ($this->config->get('captcha_honeypot_phone_ru_status')) {
+            if ($length === 11 && $digits[0] !== '7' && $digits[0] !== '8') {
+                return false;
+            }
+            if ($length === 10 && $digits[0] !== '9') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function getClientIp() {
