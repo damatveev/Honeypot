@@ -18,7 +18,7 @@ $_['text_unique_email'] = 'Уникальных e-mail';
 $_['text_log_cleared'] = 'Журнал Honeypot очищен.';
 $_['text_no_results'] = 'Записей пока нет.';
 $_['text_pagination'] = 'Показано с %d по %d из %d (всего %d страниц)';
-$_['text_how_it_works'] = 'Honeypot Anti-Spam 1.4.0 объединяет скрытые антибот-проверки, rate limit, серверную проверку телефона и Yandex SmartCaptcha.';
+$_['text_how_it_works'] = 'Honeypot Anti-Spam 1.4.1 объединяет скрытые антибот-проверки, rate limit, серверную проверку телефона и Yandex SmartCaptcha.';
 $_['text_privacy'] = 'В журнал записываются технические данные запроса, имя/e-mail и причина результата. Пароли и содержимое сообщений не сохраняются.';
 $_['text_yandex_standard'] = 'Использовать ключи стандартного модуля Yandex';
 $_['text_yandex_custom'] = 'Использовать собственные ключи Honeypot';
@@ -92,3 +92,4 @@ $_['help_enable'] = 'После обновления сохраните наст
 $_['error_permission'] = 'У вас нет прав для изменения Honeypot Anti-Spam.';
 $_['error_yandex_keys'] = 'Для собственной Yandex SmartCaptcha необходимо указать Site key и Secret key.';
 $_['error_yandex_standard'] = 'Выбран стандартный модуль Yandex, но его Site key/Secret key не найдены.';
+
