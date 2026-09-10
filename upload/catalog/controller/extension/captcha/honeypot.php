@@ -65,9 +65,17 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $ip = $this->getClientIp();
         $rate_scope = $this->getRateScope($route);
 
-        if ($this->isRateBlocked($ip, $rate_scope)) {
+        $rate_blocked = $this->isRateBlocked($ip, $rate_scope);
+        $captcha_recovery = $this->isRegistrationSubmission($route)
+            && $this->shouldVerifyYandexRegistration();
+
+        if ($rate_blocked && !$captcha_recovery) {
             $this->logDetection('rate_limit', '', 0);
             return $this->getErrorMessage();
+        }
+
+        if ($rate_blocked) {
+            $this->logDetection('rate_limit_challenge', '', 0);
         }
 
         $token = isset($this->request->post['_hp_token']) ? (string)$this->request->post['_hp_token'] : '';
@@ -125,7 +133,9 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
 
         if ($this->isRegistrationSubmission($route) && $this->config->get('captcha_honeypot_phone_check_status')) {
             if (!$this->validateRegistrationPhone()) {
-                return $this->reject('invalid_phone', $this->getRegistrationPhone(), $elapsed, $ip, $rate_scope);
+                $this->reject('invalid_phone', $this->getRegistrationPhone(), $elapsed, $ip, $rate_scope, false);
+                $this->load->language('extension/captcha/honeypot');
+                return $this->language->get('error_phone');
             }
         }
 
@@ -374,9 +384,13 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         return $this->isRegistrationSubmission($route) ? 'registration' : $route;
     }
 
-    private function reject($reason, $trap_value, $elapsed, $ip, $scope) {
+    private function reject($reason, $trap_value, $elapsed, $ip, $scope, $count_rate = true) {
         $this->logDetection($reason, $trap_value, $elapsed);
-        $this->recordRateFailure($ip, $scope);
+
+        if ($count_rate) {
+            $this->recordRateFailure($ip, $scope);
+        }
+
         return $this->getErrorMessage();
     }
 

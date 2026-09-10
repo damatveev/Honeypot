@@ -2,7 +2,7 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.3.2</version>
+  <version>1.3.3</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
 
@@ -59,6 +59,18 @@
       <search><![CDATA[$this->setOutputContent(trim($this->renderPage('account/simpleregister', $this->_templateData, $childrens)));]]></search>
       <add position="replace"><![CDATA[
         $page_content = trim($this->renderPage('account/simpleregister', $this->_templateData, $childrens));
+
+        if ($this->config->get('captcha_honeypot_phone_check_status')
+            && $this->config->get('captcha_honeypot_phone_ru_status')) {
+            $page_content = preg_replace_callback(
+                '/<input\b[^>]*name=(["\x27])register\[telephone\]\1[^>]*>/i',
+                function ($matches) {
+                    return preg_replace('/\sdata-(?:simple-)?mask=(["\x27]).*?\1/i', '', $matches[0]);
+                },
+                $page_content,
+                1
+            );
+        }
 
         if ($this->config->get('captcha_honeypot_status')) {
             $honeypot_content = $this->load->controller('extension/captcha/honeypot');

@@ -30,25 +30,92 @@
     );
   }
 
-  function normalizeRussianPrefix(node) {
+  function getRussianDigits(value) {
+    var digits = String(value || '').replace(/\D+/g, '');
+
+    if (digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
+      return digits.substring(1);
+    }
+
+    if (digits.length === 10 && digits.charAt(0) === '9') {
+      return digits;
+    }
+
+    return '';
+  }
+
+  function removeThirdPartyPhoneMask(node) {
     if (!isTelephoneInput(node)) {
       return;
     }
 
-    var mask = node.getAttribute('data-simple-mask') || '';
-    var placeholders = (mask.match(/9/g) || []).length;
-    var digits = String(node.value || '').replace(/\D+/g, '');
+    try {
+      if (node.inputmask && typeof node.inputmask.remove === 'function') {
+        node.inputmask.remove();
+      }
+    } catch (ignoreInputmask) {}
 
-    // Simple's +(999)999-99-99 mask has ten slots. Browser autofill often
-    // supplies +7XXXXXXXXXX, so remove only the country prefix before
-    // Simple processes the input and truncates its final digit.
-    if (placeholders === 10 && digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
-      node.value = digits.substring(1);
-    }
+    try {
+      if (window.jQuery) {
+        var phone = window.jQuery(node);
+
+        if (node.inputmask && typeof phone.inputmask === 'function') {
+          phone.inputmask('remove');
+        }
+
+        if (typeof phone.unmask === 'function') {
+          phone.unmask();
+        }
+      }
+    } catch (ignoreJqueryMask) {}
+
+    node.removeAttribute('data-mask');
+    node.removeAttribute('data-simple-mask');
+    node.setAttribute('inputmode', 'tel');
   }
 
+  function formatRussianPhone(node, sourceDigits) {
+    if (!isTelephoneInput(node)) {
+      return;
+    }
+
+    var digits = sourceDigits || getRussianDigits(node.value);
+    if (!digits) {
+      return;
+    }
+
+    node.value = '+7 (' + digits.substring(0, 3) + ') '
+      + digits.substring(3, 6) + '-' + digits.substring(6, 8)
+      + '-' + digits.substring(8, 10);
+  }
+
+  function preserveAutofillValue(node) {
+    var digits = getRussianDigits(node.value);
+    if (!digits) {
+      return;
+    }
+
+    window.setTimeout(function() {
+      removeThirdPartyPhoneMask(node);
+      formatRussianPhone(node, digits);
+    }, 0);
+  }
+
+  document.addEventListener('focusin', function(event) {
+    var node = event.target;
+    if (!isTelephoneInput(node)) {
+      return;
+    }
+
+    window.setTimeout(function() {
+      removeThirdPartyPhoneMask(node);
+    }, 0);
+  }, true);
+
   document.addEventListener('input', function(event) {
-    normalizeRussianPrefix(event.target);
+    if (isTelephoneInput(event.target)) {
+      preserveAutofillValue(event.target);
+    }
   }, true);
 
   document.addEventListener('paste', function(event) {
@@ -57,14 +124,21 @@
       return;
     }
 
-    var mask = node.getAttribute('data-simple-mask') || '';
-    var placeholders = (mask.match(/9/g) || []).length;
-    var digits = String(event.clipboardData.getData('text') || '').replace(/\D+/g, '');
+    var digits = getRussianDigits(event.clipboardData.getData('text'));
+    if (!digits) {
+      return;
+    }
 
-    if (placeholders === 10 && digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
-      event.preventDefault();
-      node.value = digits.substring(1);
-      node.dispatchEvent(new Event('input', { bubbles: true }));
+    event.preventDefault();
+    removeThirdPartyPhoneMask(node);
+    formatRussianPhone(node, digits);
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+  }, true);
+
+  document.addEventListener('blur', function(event) {
+    if (isTelephoneInput(event.target)) {
+      removeThirdPartyPhoneMask(event.target);
+      formatRussianPhone(event.target);
     }
   }, true);
   {% endif %}
