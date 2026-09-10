@@ -1,5 +1,18 @@
 <div class="hp-antispam" aria-hidden="true" style="position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;">
   <label for="{{ field_name }}">Website</label>
   <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <label for="{{ field_name_2 }}">Company</label>
+  <input type="text" id="{{ field_name_2 }}" name="{{ field_name_2 }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
   <input type="hidden" name="_hp_token" value="{{ token }}">
+  <input type="hidden" name="{{ js_name }}" value="" data-hp-js-proof="{{ js_value }}">
 </div>
+<script>
+(function() {
+  var node = document.querySelector('input[name="{{ js_name }}"][data-hp-js-proof]');
+  if (node) {
+    window.setTimeout(function() {
+      node.value = node.getAttribute('data-hp-js-proof');
+    }, 600);
+  }
+})();
+</script>
