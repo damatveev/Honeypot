@@ -1,5 +1,7 @@
 <?php
 class ControllerExtensionCaptchaHoneypot extends Controller {
+    private $yandexError = '';
+
     public function index($error = array()) {
         if (!$this->config->get('captcha_honeypot_status')) {
             return '';
@@ -39,6 +41,8 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $data['yandex_enabled'] = false;
         $data['yandex_site_key'] = '';
         $data['yandex_error'] = '';
+        $data['phone_ru_enabled'] = (bool)$this->config->get('captcha_honeypot_phone_check_status')
+            && (bool)$this->config->get('captcha_honeypot_phone_ru_status');
 
         if ($this->shouldRenderYandexRegistration()) {
             $keys = $this->getYandexKeys();
@@ -55,10 +59,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
     public function validate() {
         if (!$this->config->get('captcha_honeypot_status')) {
             return;
-        }
-
-        if ($name === '' && !empty($this->request->post['register']['firstname']) && is_scalar($this->request->post['register']['firstname'])) {
-            $name = (string)$this->request->post['register']['firstname'];
         }
 
         $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
@@ -130,7 +130,7 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         }
 
         if ($this->shouldVerifyYandexRegistration() && !$this->verifyYandexSmartCaptcha()) {
-            return $this->reject('yandex_failed', '', $elapsed, $ip, $rate_scope);
+            return $this->reject('yandex_failed', $this->yandexError, $elapsed, $ip, $rate_scope);
         }
 
         $this->clearRateLimit($ip, $rate_scope);
@@ -244,12 +244,16 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
     }
 
     private function verifyYandexSmartCaptcha() {
+        $this->yandexError = '';
+
         if (empty($this->request->post['smart-token'])) {
+            $this->yandexError = 'missing_smart_token';
             return false;
         }
 
         $keys = $this->getYandexKeys();
         if ($keys['secret'] === '') {
+            $this->yandexError = 'missing_secret';
             return false;
         }
 
@@ -265,15 +269,47 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = curl_exec($ch);
+        $curl_errno = (int)curl_errno($ch);
         $httpcode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($httpcode !== 200 || !$response) {
+        if ($curl_errno) {
+            $this->yandexError = 'curl_' . $curl_errno;
+            return false;
+        }
+
+        if ($httpcode !== 200) {
+            $this->yandexError = 'http_' . $httpcode;
+            return false;
+        }
+
+        if (!$response) {
+            $this->yandexError = 'empty_response';
             return false;
         }
 
         $result = json_decode($response, true);
-        return is_array($result) && isset($result['status']) && $result['status'] === 'ok';
+        if (!is_array($result)) {
+            $this->yandexError = 'invalid_json';
+            return false;
+        }
+
+        if (!isset($result['status']) || $result['status'] !== 'ok') {
+            $this->yandexError = 'status_failed';
+
+            if (!empty($result['message']) && is_scalar($result['message'])) {
+                $message = preg_replace('/[^a-zA-Z0-9_.: -]/', '', (string)$result['message']);
+                $message = substr(trim($message), 0, 160);
+
+                if ($message !== '') {
+                    $this->yandexError .= ': ' . $message;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     private function getRegistrationPhone() {

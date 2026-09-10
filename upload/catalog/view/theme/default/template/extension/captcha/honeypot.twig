@@ -22,6 +22,53 @@
 </div>
 <script>
 (function() {
+  {% if phone_ru_enabled %}
+  function isTelephoneInput(node) {
+    return node && node.matches && (
+      node.matches('input[name="telephone"]') ||
+      node.matches('input[name="register[telephone]"]')
+    );
+  }
+
+  function normalizeRussianPrefix(node) {
+    if (!isTelephoneInput(node)) {
+      return;
+    }
+
+    var mask = node.getAttribute('data-simple-mask') || '';
+    var placeholders = (mask.match(/9/g) || []).length;
+    var digits = String(node.value || '').replace(/\D+/g, '');
+
+    // Simple's +(999)999-99-99 mask has ten slots. Browser autofill often
+    // supplies +7XXXXXXXXXX, so remove only the country prefix before
+    // Simple processes the input and truncates its final digit.
+    if (placeholders === 10 && digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
+      node.value = digits.substring(1);
+    }
+  }
+
+  document.addEventListener('input', function(event) {
+    normalizeRussianPrefix(event.target);
+  }, true);
+
+  document.addEventListener('paste', function(event) {
+    var node = event.target;
+    if (!isTelephoneInput(node) || !event.clipboardData) {
+      return;
+    }
+
+    var mask = node.getAttribute('data-simple-mask') || '';
+    var placeholders = (mask.match(/9/g) || []).length;
+    var digits = String(event.clipboardData.getData('text') || '').replace(/\D+/g, '');
+
+    if (placeholders === 10 && digits.length === 11 && (digits.charAt(0) === '7' || digits.charAt(0) === '8')) {
+      event.preventDefault();
+      node.value = digits.substring(1);
+      node.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, true);
+  {% endif %}
+
   var node = document.querySelector('input[name="{{ js_name }}"][data-hp-js-proof]');
   if (node) {
     window.setTimeout(function() {
