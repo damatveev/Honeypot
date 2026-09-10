@@ -1,118 +1,112 @@
 # Honeypot Anti-Spam CAPTCHA for OpenCart 3 / LiveStore
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/damatveev/Honeypot/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/damatveev/Honeypot/releases)
 [![OpenCart](https://img.shields.io/badge/OpenCart-3.x-blue.svg)](https://www.opencart.com/)
 [![PHP](https://img.shields.io/badge/PHP-7.2--8.1-777bb4.svg)](https://www.php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Honeypot Anti-Spam CAPTCHA** — дополнительная антибот-защита форм OpenCart 3.x / LiveStore. Версия 1.2.0 усиливает регистрацию несколькими независимыми проверками и может автоматически подключать **Yandex SmartCaptcha** с уже существующими API-ключами стандартного модуля Yandex CAPTCHA.
-
-English: Honeypot Anti-Spam CAPTCHA is an OpenCart 3.x / LiveStore extension that adds layered anti-bot protection with honeypot fields, JavaScript verification, expiring form tokens, rate limiting and optional Yandex SmartCaptcha reuse.
-
-## Версия 1.2.0
-
-На регистрации одновременно могут использоваться:
-
-- два скрытых honeypot-поля;
-- одноразовый session-token;
-- контроль срока жизни токена;
-- проверка User-Agent между открытием и отправкой формы;
-- JavaScript-проверка;
-- минимальное время заполнения;
-- rate limit по IP/route;
-- Yandex SmartCaptcha.
-
-Если стандартный модуль **Yandex CAPTCHA** включён и в нём уже заданы `site key` и `secret`, Honeypot использует эти настройки автоматически. Повторно вводить API-ключи в Honeypot не требуется.
+**Honeypot Anti-Spam CAPTCHA 1.3.0** — многоуровневая защита регистрации и стандартных форм OpenCart 3.x / LiveStore. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
 
 ## Yandex SmartCaptcha
 
-Для усиленной защиты регистрации Honeypot 1.2.0 проверяет наличие стандартного модуля Yandex CAPTCHA. Если он включён и настроен, на странице регистрации добавляется Yandex SmartCaptcha, если она ещё не выведена основной CAPTCHA.
+В версии 1.3.0 Yandex SmartCaptcha встроена в Honeypot как отдельный блок настроек.
 
-Если Yandex уже выбрана основной CAPTCHA для регистрации, Honeypot не выводит второй визуальный виджет и работает как дополнительный скрытый антибот-слой.
+Доступны два режима:
 
-## Возможности
+- **Стандартный модуль Yandex** — используются `captcha_yandex_key` и `captcha_yandex_secret`, уже сохранённые в OpenCart/LiveStore.
+- **Собственные ключи Honeypot** — Site key и Secret key задаются непосредственно в настройках Honeypot. Это позволяет использовать SmartCaptcha даже если отдельный модуль Yandex в магазине не установлен или не настроен.
 
-- два динамических honeypot-поля без `display:none`;
-- случайные имена ловушек для каждой формы;
-- одноразовый токен формы;
-- ограниченный срок жизни токена;
+Для регистрации можно отдельно включить вывод SmartCaptcha. Полученный `smart-token` обязательно проверяется на сервере через API Yandex `smartcaptcha.yandexcloud.net/validate`.
+
+Если Yandex уже выбрана основной CAPTCHA OpenCart для страницы регистрации, Honeypot не выводит второй виджет и не дублирует проверку.
+
+### Сложное задание с картинками
+
+Режим повышенной сложности и обязательное визуальное задание настраиваются в **Yandex Cloud** для того Site key, который используется модулем. Сам OpenCart-виджет не должен подменять серверную конфигурацию сложности CAPTCHA. Для максимальной защиты рекомендуется включить в Yandex Cloud усиленную/сложную проверку для используемой CAPTCHA.
+
+## Серверная проверка телефона
+
+В 1.3.0 добавлена независимая серверная проверка поля `telephone` на регистрации. Она работает даже если бот обходит JavaScript-маску браузера.
+
+По умолчанию:
+
+- разрешены только цифры и символы `+ ( ) -` и пробел;
+- после удаления форматирования должно остаться 10–11 цифр;
+- строки вроде `matveev`, `test`, `123` отклоняются;
+- в российском режиме 11-значный номер должен начинаться с `7` или `8`, 10-значный — с `9`.
+
+Нарушение записывается в журнал как `invalid_phone`.
+
+## Основные возможности
+
+- два динамических honeypot-поля;
+- случайные имена ловушек;
+- одноразовый session-token;
+- срок жизни токена;
 - привязка токена к User-Agent;
-- JavaScript-проверка;
-- контроль минимального времени заполнения;
-- rate limit и временная блокировка по IP/route;
-- дополнительная Yandex SmartCaptcha на регистрации;
-- совместная работа с Google / Yandex / Basic CAPTCHA;
-- журнал e-mail, имени, IP, User-Agent, route, причины и времени обнаружения;
-- фильтры и статистика в административной панели;
-- настраиваемый срок хранения журнала;
-- QR-код и ссылка для поддержки разработки;
-- OCMOD + стандартный механизм CAPTCHA OpenCart;
-- VQMod и OpenCart Events не требуются.
+- JavaScript proof;
+- минимальное время заполнения;
+- rate limit по IP/route с временной блокировкой;
+- автономная Yandex SmartCaptcha;
+- использование ключей стандартного Yandex-модуля или собственных ключей;
+- серверная проверка телефона;
+- журнал причин блокировки;
+- опциональное журналирование успешного прохождения регистрации (`registration_passed`);
+- фильтры и статистика;
+- OCMOD, без VQMod и OpenCart Events.
 
 Пароли и содержимое сообщений модуль не сохраняет.
 
-## Причины блокировки в журнале
+## Причины в журнале
 
-`honeypot`, `too_fast`, `invalid_token`, `missing_session`, `expired_token`, `client_mismatch`, `missing_trap`, `js_check`, `rate_limit`, `yandex_failed`.
+`honeypot`, `too_fast`, `invalid_token`, `missing_session`, `expired_token`, `client_mismatch`, `missing_trap`, `js_check`, `rate_limit`, `invalid_phone`, `yandex_failed`, `registration_passed`.
 
 ## Установка
 
-1. Скачайте `dist/honeypot_antispam_captcha_v1.2.0.ocmod.zip`.
+1. Скачайте `dist/honeypot_antispam_captcha_v1.3.0.ocmod.zip`.
 2. Откройте `Дополнения → Установка дополнений` и загрузите ZIP.
-3. Перейдите в `Дополнения → Дополнения` → тип `CAPTCHA`.
+3. Перейдите в `Дополнения → Дополнения → CAPTCHA`.
 4. Установите и откройте **Honeypot Anti-Spam**.
-5. Включите расширение.
+5. Включите модуль и сохраните настройки.
 6. Откройте `Дополнения → Модификаторы` и обновите кеш модификаций.
-7. Для Yandex SmartCaptcha убедитесь, что стандартный модуль Yandex CAPTCHA включён и в нём заполнены site key и secret.
-8. Проверьте регистрацию и журнал блокировок.
+7. В разделе Yandex SmartCaptcha выберите источник ключей.
+8. Если используются собственные ключи — укажите Site key и Secret key.
+9. Для максимальной защиты настройте повышенную сложность CAPTCHA в Yandex Cloud.
+10. Выполните тестовую регистрацию и проверьте журнал.
 
 ## Рекомендуемые параметры
-
-Для регистрации рекомендуются начальные значения:
 
 - минимальное время заполнения: 5 секунд;
 - JavaScript-проверка: включена;
 - срок жизни токена: 1800 секунд;
 - rate limit: включён;
-- лимит: 6 попыток;
-- окно: 900 секунд;
-- блокировка: 1800 секунд.
-
-При необходимости значения можно скорректировать под фактический трафик магазина.
+- лимит: 6 попыток за 900 секунд;
+- блокировка: 1800 секунд;
+- серверная проверка телефона: включена;
+- журнал успешных регистраций: по необходимости.
 
 ## Совместимость
 
 - OpenCart 3.x;
 - LiveStore 3.x;
 - PHP 7.2–8.1;
-- рекомендуемый диапазон PHP 7.4–8.1;
 - OCMOD: да;
 - VQMod: нет;
 - Events: нет.
 
-Сторонние темы, OCMOD и изменённые контроллеры могут влиять на точки интеграции. После установки необходимо проверить регистрацию на конкретной сборке магазина.
+Сторонние темы и модифицированные контроллеры могут менять точки интеграции. После установки необходимо проверить регистрацию на конкретной сборке магазина.
 
 ## Скачать
 
-Актуальные версии публикуются в [GitHub Releases](https://github.com/damatveev/Honeypot/releases). Готовый пакет текущей версии также находится в каталоге [`dist`](https://github.com/damatveev/Honeypot/tree/main/dist).
-
-## Keywords
-
-OpenCart, OpenCart 3, LiveStore, ocStore, honeypot, anti-spam, antispam, spam protection, CAPTCHA, Yandex SmartCaptcha, bot protection, form security, invisible captcha, OCMOD, PHP, ecommerce, OpenCart extension, OpenCart module, защита от спама, защита от ботов.
-
-## Поддержка проекта / Donate
-
-Если модуль оказался полезен, разработку можно поддержать:
-
-https://boosty.to/matveevd/donate
-
-QR-код для поддержки проекта включён в административный интерфейс модуля.
+Актуальный пакет находится в каталоге [`dist`](https://github.com/damatveev/Honeypot/tree/main/dist).
 
 ## Автор
 
 **Dmitry Matveev**  
 E-mail: d.a.matveev@gmail.com
 
+Поддержать разработку: https://boosty.to/matveevd/donate
+
 ## Лицензия
 
-Распространяется по лицензии [MIT](LICENSE).
+MIT.
