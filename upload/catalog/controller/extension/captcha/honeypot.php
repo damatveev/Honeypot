@@ -261,7 +261,8 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         if (in_array($route, array(
             'account/register',
             'account/simpleregister',
-            'extension/module/uni_login_register/page'
+            'extension/module/uni_login_register/page',
+            'checkout/register'
         ), true)) {
             return true;
         }
@@ -275,7 +276,8 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         return in_array($route, array(
             'account/register',
             'account/simpleregister',
-            'extension/module/uni_login_register/register'
+            'extension/module/uni_login_register/register',
+            'checkout/register'
         ), true);
     }
 
@@ -586,3 +588,4 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         return substr($value, 0, $length);
     }
 }
+
