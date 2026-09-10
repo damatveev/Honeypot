@@ -1,0 +1,47 @@
+name: Build distribution package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'dist/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build OCMOD package
+        run: |
+          rm -rf dist package
+          mkdir -p dist package
+          cp install.xml package/
+          cp -R upload package/
+          cp README.txt package/
+          cp README.md package/
+          cp CHANGELOG.md package/
+          cp DISTRIBUTION.md package/
+          cp LICENSE package/
+          cd package
+          zip -r ../dist/honeypot_antispam_captcha_v1.1.0.ocmod.zip .
+          cd ..
+          rm -rf package
+
+      - name: Commit distribution package
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/honeypot_antispam_captcha_v1.1.0.ocmod.zip
+          if git diff --cached --quiet; then
+            echo "Distribution package is unchanged"
+          else
+            git commit -m "Build Honeypot Anti-Spam 1.1.0 distribution"
+            git push
+          fi
