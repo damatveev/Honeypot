@@ -2,7 +2,7 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.2.0</version>
+  <version>1.3.0</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
 
@@ -12,13 +12,6 @@
       <search><![CDATA[$data['column_left'] = $this->load->controller('common/column_left');]]></search>
       <add position="before"><![CDATA[
 		if ($this->config->get('captcha_honeypot_status')) {
-			$yandex_ready = $this->config->get('captcha_yandex_status') && $this->config->get('captcha_yandex_key') && $this->config->get('captcha_yandex_secret');
-			$yandex_primary = $this->config->get('config_captcha') == 'yandex' && in_array('register', (array)$this->config->get('config_captcha_page'));
-
-			if ($yandex_ready && !$yandex_primary) {
-				$data['captcha'] .= $this->load->controller('extension/captcha/yandex', $this->error);
-			}
-
 			$data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
 		}
       ]]></add>
