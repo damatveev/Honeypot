@@ -1,15 +1,15 @@
 # Honeypot Anti-Spam CAPTCHA for OpenCart 3 / LiveStore
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/damatveev/Honeypot/releases)
+[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](https://github.com/damatveev/Honeypot/releases)
 [![OpenCart](https://img.shields.io/badge/OpenCart-3.x-blue.svg)](https://www.opencart.com/)
 [![PHP](https://img.shields.io/badge/PHP-7.2--8.1-777bb4.svg)](https://www.php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Honeypot Anti-Spam CAPTCHA 1.3.0** — многоуровневая защита регистрации и стандартных форм OpenCart 3.x / LiveStore. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
+**Honeypot Anti-Spam CAPTCHA 1.3.1** — многоуровневая защита регистрации и стандартных и AJAX-форм OpenCart 3.x / LiveStore, включая Simple и Uni Login Register. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
 
 ## Yandex SmartCaptcha
 
-В версии 1.3.0 Yandex SmartCaptcha встроена в Honeypot как отдельный блок настроек.
+В версии 1.3.1 Yandex SmartCaptcha встроена в Honeypot как отдельный блок настроек.
 
 Доступны два режима:
 
@@ -26,7 +26,7 @@
 
 ## Серверная проверка телефона
 
-В 1.3.0 добавлена независимая серверная проверка поля `telephone` на регистрации. Она работает даже если бот обходит JavaScript-маску браузера.
+В 1.3.1 добавлена независимая серверная проверка поля `telephone` на регистрации. Она работает даже если бот обходит JavaScript-маску браузера.
 
 По умолчанию:
 
@@ -46,7 +46,8 @@
 - привязка токена к User-Agent;
 - JavaScript proof;
 - минимальное время заполнения;
-- rate limit по IP/route с временной блокировкой;
+- rate limit по IP/группе маршрутов с временной блокировкой только за антиспам-отказы;
+- совместимость с `account/simpleregister` (Simple) и Uni Login Register (UniShop2);
 - автономная Yandex SmartCaptcha;
 - использование ключей стандартного Yandex-модуля или собственных ключей;
 - серверная проверка телефона;
@@ -63,7 +64,7 @@
 
 ## Установка
 
-1. Скачайте `dist/honeypot_antispam_captcha_v1.3.0.ocmod.zip`.
+1. Скачайте `dist/honeypot_antispam_captcha_v1.3.1.ocmod.zip`.
 2. Откройте `Дополнения → Установка дополнений` и загрузите ZIP.
 3. Перейдите в `Дополнения → Дополнения → CAPTCHA`.
 4. Установите и откройте **Honeypot Anti-Spam**.

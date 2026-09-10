@@ -4,7 +4,7 @@
 
 ## Рекомендуемая карточка
 
-**Название:** Honeypot Anti-Spam CAPTCHA 1.2.0
+**Название:** Honeypot Anti-Spam CAPTCHA 1.3.1
 
 **Краткое описание:** Усиленная антиспам-защита для OpenCart/LiveStore с honeypot, JavaScript-проверкой, одноразовым токеном, rate limit и дополнительной Yandex SmartCaptcha на регистрации. Использует API-ключи из стандартного модуля Yandex CAPTCHA.
 
@@ -15,11 +15,11 @@
 - PHP: 7.2–8.1
 - OpenCart: 3.x
 - LiveStore: 3.x
-- Yandex SmartCaptcha: Да, через существующие настройки стандартного модуля
+- Yandex SmartCaptcha: Да, через стандартные или собственные ключи Honeypot
 
 ## Файл для публикации
 
-`dist/honeypot_antispam_captcha_v1.2.0.ocmod.zip`
+`dist/honeypot_antispam_captcha_v1.3.1.ocmod.zip`
 
 ## Перед публикацией
 

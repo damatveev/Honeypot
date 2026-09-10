@@ -30,7 +30,7 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             'ua_hash' => $this->userAgentHash()
         );
 
-        $data['token'] = $token;
+        $data['hp_token'] = $token;
         $data['field_name'] = 'hp_' . substr(hash('sha256', $token . ':a'), 0, 12);
         $data['field_name_2'] = 'hp_' . substr(hash('sha256', $token . ':b'), 0, 12);
         $data['js_name'] = '_hp_js_' . substr(hash('sha256', $token . ':js'), 0, 8);
@@ -57,57 +57,53 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             return;
         }
 
+        if ($name === '' && !empty($this->request->post['register']['firstname']) && is_scalar($this->request->post['register']['firstname'])) {
+            $name = (string)$this->request->post['register']['firstname'];
+        }
+
         $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
         $ip = $this->getClientIp();
-        $rate = $this->registerAttempt($ip, $route);
+        $rate_scope = $this->getRateScope($route);
 
-        if ($rate['blocked']) {
+        if ($this->isRateBlocked($ip, $rate_scope)) {
             $this->logDetection('rate_limit', '', 0);
             return $this->getErrorMessage();
         }
 
         $token = isset($this->request->post['_hp_token']) ? (string)$this->request->post['_hp_token'] : '';
         if ($token === '' || !isset($this->session->data['honeypot_tokens']) || !is_array($this->session->data['honeypot_tokens'])) {
-            $this->logDetection('missing_session', '', 0);
-            return $this->getErrorMessage();
+            return $this->reject('missing_session', '', 0, $ip, $rate_scope);
         }
 
         if (!isset($this->session->data['honeypot_tokens'][$token]) || !is_array($this->session->data['honeypot_tokens'][$token])) {
-            $this->logDetection('invalid_token', '', 0);
-            return $this->getErrorMessage();
+            return $this->reject('invalid_token', '', 0, $ip, $rate_scope);
         }
 
         $entry = $this->session->data['honeypot_tokens'][$token];
-        unset($this->session->data['honeypot_tokens'][$token]);
-
         $started = isset($entry['started']) ? (float)$entry['started'] : 0;
         $expires = isset($entry['expires']) ? (float)$entry['expires'] : 0;
         $elapsed = $started > 0 ? max(0, microtime(true) - $started) : 0;
 
         if ($expires > 0 && microtime(true) > $expires) {
-            $this->logDetection('expired_token', '', $elapsed);
-            return $this->getErrorMessage();
+            return $this->reject('expired_token', '', $elapsed, $ip, $rate_scope);
         }
 
         if (!empty($entry['ua_hash']) && !hash_equals((string)$entry['ua_hash'], $this->userAgentHash())) {
-            $this->logDetection('client_mismatch', '', $elapsed);
-            return $this->getErrorMessage();
+            return $this->reject('client_mismatch', '', $elapsed, $ip, $rate_scope);
         }
 
         $field_name = 'hp_' . substr(hash('sha256', $token . ':a'), 0, 12);
         $field_name_2 = 'hp_' . substr(hash('sha256', $token . ':b'), 0, 12);
 
         if (!array_key_exists($field_name, $this->request->post) || !array_key_exists($field_name_2, $this->request->post)) {
-            $this->logDetection('missing_trap', '', $elapsed);
-            return $this->getErrorMessage();
+            return $this->reject('missing_trap', '', $elapsed, $ip, $rate_scope);
         }
 
         $trap_value = trim((string)$this->request->post[$field_name]);
         $trap_value_2 = trim((string)$this->request->post[$field_name_2]);
 
         if ($trap_value !== '' || $trap_value_2 !== '') {
-            $this->logDetection('honeypot', trim($trap_value . ' ' . $trap_value_2), $elapsed);
-            return $this->getErrorMessage();
+            return $this->reject('honeypot', trim($trap_value . ' ' . $trap_value_2), $elapsed, $ip, $rate_scope);
         }
 
         if ($this->config->get('captcha_honeypot_js_check_status')) {
@@ -116,39 +112,66 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             $actual = isset($this->request->post[$js_name]) ? (string)$this->request->post[$js_name] : '';
 
             if ($actual === '' || !hash_equals($expected, $actual)) {
-                $this->logDetection('js_check', '', $elapsed);
-                return $this->getErrorMessage();
+                return $this->reject('js_check', '', $elapsed, $ip, $rate_scope);
             }
         }
 
         if ($this->config->get('captcha_honeypot_time_check_status')) {
             $min_seconds = max(0, (int)$this->config->get('captcha_honeypot_min_seconds'));
             if ($min_seconds > 0 && $elapsed < $min_seconds) {
-                $this->logDetection('too_fast', '', $elapsed);
-                return $this->getErrorMessage();
+                return $this->reject('too_fast', '', $elapsed, $ip, $rate_scope);
             }
         }
 
-        if ($route === 'account/register' && $this->config->get('captcha_honeypot_phone_check_status')) {
+        if ($this->isRegistrationSubmission($route) && $this->config->get('captcha_honeypot_phone_check_status')) {
             if (!$this->validateRegistrationPhone()) {
-                $this->logDetection('invalid_phone', isset($this->request->post['telephone']) ? (string)$this->request->post['telephone'] : '', $elapsed);
-                return $this->getErrorMessage();
+                return $this->reject('invalid_phone', $this->getRegistrationPhone(), $elapsed, $ip, $rate_scope);
             }
         }
 
         if ($this->shouldVerifyYandexRegistration() && !$this->verifyYandexSmartCaptcha()) {
-            $this->logDetection('yandex_failed', '', $elapsed);
-            return $this->getErrorMessage();
+            return $this->reject('yandex_failed', '', $elapsed, $ip, $rate_scope);
         }
 
-        if ($route === 'account/register' && $this->config->get('captcha_honeypot_log_success_status')) {
-            $this->logDetection('registration_passed', '', $elapsed);
+        $this->clearRateLimit($ip, $rate_scope);
+
+        if (!isset($this->session->data['honeypot_passed_tokens']) || !is_array($this->session->data['honeypot_passed_tokens'])) {
+            $this->session->data['honeypot_passed_tokens'] = array();
+        }
+
+        $this->session->data['honeypot_passed_tokens'][$token] = array(
+            'elapsed' => $elapsed,
+            'route' => $route
+        );
+    }
+
+    public function consume() {
+        $token = isset($this->request->post['_hp_token']) ? (string)$this->request->post['_hp_token'] : '';
+
+        if ($token === '') {
+            return;
+        }
+
+        if (isset($this->session->data['honeypot_passed_tokens'][$token])) {
+            $passed = $this->session->data['honeypot_passed_tokens'][$token];
+            $route = isset($passed['route']) ? (string)$passed['route'] : '';
+            $elapsed = isset($passed['elapsed']) ? (float)$passed['elapsed'] : 0;
+
+            if ($this->isRegistrationSubmission($route) && $this->config->get('captcha_honeypot_log_success_status')) {
+                $this->logDetection('registration_passed', '', $elapsed);
+            }
+
+            unset($this->session->data['honeypot_passed_tokens'][$token]);
+        }
+
+        if (isset($this->session->data['honeypot_tokens'][$token])) {
+            unset($this->session->data['honeypot_tokens'][$token]);
         }
     }
 
     private function shouldRenderYandexRegistration() {
         $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
-        return $route === 'account/register'
+        return $this->isRegistrationFormRequest($route)
             && $this->config->get('captcha_honeypot_yandex_status')
             && $this->config->get('captcha_honeypot_yandex_register_status')
             && !$this->isPrimaryYandexRegistration()
@@ -156,14 +179,48 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
     }
 
     private function shouldVerifyYandexRegistration() {
-        return $this->shouldRenderYandexRegistration();
+        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
+        return $this->isRegistrationSubmission($route)
+            && $this->config->get('captcha_honeypot_yandex_status')
+            && $this->config->get('captcha_honeypot_yandex_register_status')
+            && !$this->isPrimaryYandexRegistration()
+            && $this->isYandexReady();
+    }
+
+    private function isRegistrationFormRequest($route) {
+        if (in_array($route, array(
+            'account/register',
+            'account/simpleregister',
+            'extension/module/uni_login_register/page'
+        ), true)) {
+            return true;
+        }
+
+        return $route === 'extension/module/uni_login_register/modal'
+            && isset($this->request->post['type'])
+            && $this->request->post['type'] === 'register';
+    }
+
+    private function isRegistrationSubmission($route) {
+        return in_array($route, array(
+            'account/register',
+            'account/simpleregister',
+            'extension/module/uni_login_register/register'
+        ), true);
     }
 
     private function isPrimaryYandexRegistration() {
+        if ($this->config->get('config_captcha') !== 'yandex' || !$this->config->get('captcha_yandex_status')) {
+            return false;
+        }
+
+        $route = isset($this->request->get['route']) ? (string)$this->request->get['route'] : '';
+        if (strpos($route, 'extension/module/uni_login_register/') === 0) {
+            return true;
+        }
+
         $pages = (array)$this->config->get('config_captcha_page');
-        return $this->config->get('config_captcha') === 'yandex'
-            && $this->config->get('captcha_yandex_status')
-            && in_array('register', $pages);
+        return in_array('register', $pages, true);
     }
 
     private function getYandexKeys() {
@@ -202,7 +259,9 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             'ip' => $this->getClientIp()
         ));
 
-        $ch = curl_init('https://smartcaptcha.yandexcloud.net/validate?' . $args);
+        $ch = curl_init('https://smartcaptcha.cloud.yandex.ru/validate');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $args);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         $response = curl_exec($ch);
@@ -217,8 +276,20 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         return is_array($result) && isset($result['status']) && $result['status'] === 'ok';
     }
 
+    private function getRegistrationPhone() {
+        if (isset($this->request->post['telephone']) && is_scalar($this->request->post['telephone'])) {
+            return trim((string)$this->request->post['telephone']);
+        }
+
+        if (isset($this->request->post['register']['telephone']) && is_scalar($this->request->post['register']['telephone'])) {
+            return trim((string)$this->request->post['register']['telephone']);
+        }
+
+        return '';
+    }
+
     private function validateRegistrationPhone() {
-        $phone = isset($this->request->post['telephone']) ? trim((string)$this->request->post['telephone']) : '';
+        $phone = $this->getRegistrationPhone();
         if ($phone === '') {
             return false;
         }
@@ -263,45 +334,74 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         return $this->language->get('error_captcha');
     }
 
-    private function registerAttempt($ip, $route) {
-        $limit = max(1, min(100, (int)$this->config->get('captcha_honeypot_rate_limit')));
-        $window = max(60, min(86400, (int)$this->config->get('captcha_honeypot_rate_window')));
-        $block = max(60, min(86400, (int)$this->config->get('captcha_honeypot_block_seconds')));
+    private function getRateScope($route) {
+        return $this->isRegistrationSubmission($route) ? 'registration' : $route;
+    }
 
+    private function reject($reason, $trap_value, $elapsed, $ip, $scope) {
+        $this->logDetection($reason, $trap_value, $elapsed);
+        $this->recordRateFailure($ip, $scope);
+        return $this->getErrorMessage();
+    }
+
+    private function isRateBlocked($ip, $scope) {
         if (!$this->config->get('captcha_honeypot_rate_limit_status') || $ip === '') {
-            return array('blocked' => false);
+            return false;
         }
 
         $this->ensureRateTable();
-        $key = hash('sha256', $ip . '|' . $route);
+        $key = hash('sha256', $ip . '|' . $scope);
+        $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "honeypot_rate` WHERE `rate_key` = '" . $this->db->escape($key) . "' LIMIT 1");
+
+        if (!$query->num_rows) {
+            return false;
+        }
+
+        $now = time();
+        $blocked_until = !empty($query->row['blocked_until']) ? strtotime($query->row['blocked_until']) : 0;
+        return $blocked_until && $blocked_until > $now;
+    }
+
+    private function recordRateFailure($ip, $scope) {
+        if (!$this->config->get('captcha_honeypot_rate_limit_status') || $ip === '') {
+            return;
+        }
+
+        $limit = max(1, min(100, (int)$this->config->get('captcha_honeypot_rate_limit')));
+        $window = max(60, min(86400, (int)$this->config->get('captcha_honeypot_rate_window')));
+        $block = max(60, min(86400, (int)$this->config->get('captcha_honeypot_block_seconds')));
+        $this->ensureRateTable();
+
+        $key = hash('sha256', $ip . '|' . $scope);
         $query = $this->db->query("SELECT * FROM `" . DB_PREFIX . "honeypot_rate` WHERE `rate_key` = '" . $this->db->escape($key) . "' LIMIT 1");
         $now = time();
 
         if (!$query->num_rows) {
-            $this->db->query("INSERT INTO `" . DB_PREFIX . "honeypot_rate` SET `rate_key` = '" . $this->db->escape($key) . "', ip = '" . $this->db->escape($this->limit($ip, 45)) . "', route = '" . $this->db->escape($this->limit($route, 255)) . "', attempts = 1, window_started = FROM_UNIXTIME('" . $now . "'), last_seen = NOW(), blocked_until = NULL");
-            return array('blocked' => false);
+            $this->db->query("INSERT INTO `" . DB_PREFIX . "honeypot_rate` SET `rate_key` = '" . $this->db->escape($key) . "', ip = '" . $this->db->escape($this->limit($ip, 45)) . "', route = '" . $this->db->escape($this->limit($scope, 255)) . "', attempts = 1, window_started = FROM_UNIXTIME('" . $now . "'), last_seen = NOW(), blocked_until = NULL");
+            return;
         }
 
         $row = $query->row;
-        $blocked_until = !empty($row['blocked_until']) ? strtotime($row['blocked_until']) : 0;
-        if ($blocked_until && $blocked_until > $now) {
-            return array('blocked' => true);
-        }
-
         $window_started = !empty($row['window_started']) ? strtotime($row['window_started']) : 0;
+
         if (!$window_started || ($now - $window_started) >= $window) {
             $this->db->query("UPDATE `" . DB_PREFIX . "honeypot_rate` SET attempts = 1, window_started = NOW(), last_seen = NOW(), blocked_until = NULL WHERE `rate_key` = '" . $this->db->escape($key) . "'");
-            return array('blocked' => false);
+            return;
         }
 
         $attempts = (int)$row['attempts'] + 1;
-        if ($attempts > $limit) {
-            $this->db->query("UPDATE `" . DB_PREFIX . "honeypot_rate` SET attempts = '" . $attempts . "', last_seen = NOW(), blocked_until = DATE_ADD(NOW(), INTERVAL " . $block . " SECOND) WHERE `rate_key` = '" . $this->db->escape($key) . "'");
-            return array('blocked' => true);
+        $blocked_sql = $attempts >= $limit ? ", blocked_until = DATE_ADD(NOW(), INTERVAL " . $block . " SECOND)" : "";
+        $this->db->query("UPDATE `" . DB_PREFIX . "honeypot_rate` SET attempts = '" . $attempts . "', last_seen = NOW()" . $blocked_sql . " WHERE `rate_key` = '" . $this->db->escape($key) . "'");
+    }
+
+    private function clearRateLimit($ip, $scope) {
+        if (!$this->config->get('captcha_honeypot_rate_limit_status') || $ip === '') {
+            return;
         }
 
-        $this->db->query("UPDATE `" . DB_PREFIX . "honeypot_rate` SET attempts = '" . $attempts . "', last_seen = NOW() WHERE `rate_key` = '" . $this->db->escape($key) . "'");
-        return array('blocked' => false);
+        $this->ensureRateTable();
+        $key = hash('sha256', $ip . '|' . $scope);
+        $this->db->query("DELETE FROM `" . DB_PREFIX . "honeypot_rate` WHERE `rate_key` = '" . $this->db->escape($key) . "'");
     }
 
     private function makeToken() {
@@ -330,6 +430,10 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
                 $email = (string)$this->request->post[$key];
                 break;
             }
+        }
+
+        if ($email === '' && !empty($this->request->post['register']['email']) && is_scalar($this->request->post['register']['email'])) {
+            $email = (string)$this->request->post['register']['email'];
         }
 
         $name = '';

@@ -1,5 +1,5 @@
 {% if yandex_enabled %}
-<script src="https://smartcaptcha.yandexcloud.net/captcha.js" defer></script>
+<script src="https://smartcaptcha.cloud.yandex.ru/captcha.js" defer></script>
 <fieldset class="hp-yandex-smartcaptcha">
   <legend>Yandex SmartCaptcha</legend>
   <div class="form-group required">
@@ -17,7 +17,7 @@
   <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
   <label for="{{ field_name_2 }}">Company</label>
   <input type="text" id="{{ field_name_2 }}" name="{{ field_name_2 }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
-  <input type="hidden" name="_hp_token" value="{{ token }}">
+  <input type="hidden" name="_hp_token" value="{{ hp_token }}">
   <input type="hidden" name="{{ js_name }}" value="" data-hp-js-proof="{{ js_value }}">
 </div>
 <script>

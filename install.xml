@@ -2,7 +2,7 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.3.0</version>
+  <version>1.3.1</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
 
@@ -12,20 +12,124 @@
       <search><![CDATA[$data['column_left'] = $this->load->controller('common/column_left');]]></search>
       <add position="before"><![CDATA[
 		if ($this->config->get('captcha_honeypot_status')) {
-			$data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
+            $pages = (array)$this->config->get('config_captcha_page');
+            $primary_honeypot = $this->config->get('config_captcha') === 'honeypot'
+                && in_array('register', $pages, true);
+
+            if (!$primary_honeypot) {
+			    $data['captcha'] .= $this->load->controller('extension/captcha/honeypot', $this->error);
+            }
 		}
       ]]></add>
     </operation>
+    <operation error="skip">
+      <search><![CDATA[$customer_id = $this->model_account_customer->addCustomer($this->request->post);]]></search>
+      <add position="after"><![CDATA[
+            if ($this->config->get('captcha_honeypot_status')) {
+                $this->load->controller('extension/captcha/honeypot/consume');
+            }
+      ]]></add>
+    </operation>
     <operation>
-      <search><![CDATA[// Agree to terms]]></search>
+      <search><![CDATA[return !$this->error;]]></search>
       <add position="before"><![CDATA[
-		if ($this->config->get('captcha_honeypot_status')) {
-			$honeypot = $this->load->controller('extension/captcha/honeypot/validate');
-			if ($honeypot) {
-				$this->error['captcha'] = $honeypot;
-			}
+		if (!$this->error && $this->config->get('captcha_honeypot_status')) {
+            $pages = (array)$this->config->get('config_captcha_page');
+            $primary_honeypot = $this->config->get('config_captcha') === 'honeypot'
+                && in_array('register', $pages, true);
+
+            if (!$primary_honeypot) {
+			    $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+			    if ($honeypot) {
+				    $this->error['captcha'] = $honeypot;
+			    }
+            }
 		}
 
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/account/simpleregister.php">
+    <operation error="skip">
+      <search><![CDATA[$this->setOutputContent(trim($this->renderPage('account/simpleregister', $this->_templateData, $childrens)));]]></search>
+      <add position="replace"><![CDATA[
+        $page_content = trim($this->renderPage('account/simpleregister', $this->_templateData, $childrens));
+
+        if ($this->config->get('captcha_honeypot_status')) {
+            $honeypot_content = $this->load->controller('extension/captcha/honeypot');
+            $page_content = preg_replace_callback(
+                '/(<form[^>]*id=["]simplepage_form["][^>]*>)/i',
+                function ($matches) use ($honeypot_content) {
+                    return $matches[1] . $honeypot_content;
+                },
+                $page_content,
+                1
+            );
+        }
+
+        $this->setOutputContent($page_content);
+      ]]></add>
+    </operation>
+    <operation error="skip">
+      <search><![CDATA[return !$error;]]></search>
+      <add position="before"><![CDATA[
+        if (!$error && $this->config->get('captcha_honeypot_status')) {
+            $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+            if ($honeypot) {
+                $this->_templateData['error_warning'] = $honeypot;
+                $error = true;
+            }
+        }
+
+      ]]></add>
+    </operation>
+    <operation error="skip">
+      <search><![CDATA[$this->model_account_customer->addCustomer($info);]]></search>
+      <add position="after"><![CDATA[
+            if ($this->config->get('captcha_honeypot_status')) {
+                $this->load->controller('extension/captcha/honeypot/consume');
+            }
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/extension/module/uni_login_register.php">
+    <operation error="skip">
+      <search><![CDATA[if ($this->config->get('config_account_id')) {]]></search>
+      <add position="before"><![CDATA[
+        $primary_honeypot = isset($reg_setting['captcha'])
+            && $this->config->get('config_captcha') === 'honeypot'
+            && $this->config->get('captcha_honeypot_status');
+
+        if ($this->config->get('captcha_honeypot_status') && !$primary_honeypot) {
+            $data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
+        }
+
+      ]]></add>
+    </operation>
+    <operation error="skip">
+      <search><![CDATA[if(!$json) {]]></search>
+      <add position="before"><![CDATA[
+            $primary_honeypot = isset($reg_setting['captcha'])
+                && $this->config->get('config_captcha') === 'honeypot'
+                && $this->config->get('captcha_honeypot_status');
+
+            if (!$json && $this->config->get('captcha_honeypot_status') && !$primary_honeypot) {
+                $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
+                if ($honeypot) {
+                    $json['error']['captcha'] = $honeypot;
+                }
+            }
+
+      ]]></add>
+    </operation>
+    <operation error="skip">
+      <search><![CDATA[$customer_id = $this->model_account_customer->addCustomer($data);]]></search>
+      <add position="after"><![CDATA[
+                if ($this->config->get('captcha_honeypot_status')) {
+                    $this->load->controller('extension/captcha/honeypot/consume');
+                }
       ]]></add>
     </operation>
   </file>
