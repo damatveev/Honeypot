@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionCaptchaHoneypot extends Controller {
-    const VERSION = '1.3.4';
+    const VERSION = '1.3.5';
     private $error = array();
 
     public function index() {

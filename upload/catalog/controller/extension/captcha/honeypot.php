@@ -64,8 +64,9 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $rate_scope = $this->getRateScope($route);
 
         $rate_blocked = $this->isRateBlocked($ip, $rate_scope);
+        $yandex_required = $this->shouldVerifyYandexRegistration();
         $captcha_recovery = $this->isRegistrationSubmission($route)
-            && $this->shouldVerifyYandexRegistration();
+            && $yandex_required;
 
         if ($rate_blocked && !$captcha_recovery) {
             $this->logDetection('rate_limit', '', 0);
@@ -112,23 +113,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             return $this->reject('honeypot', trim($trap_value . ' ' . $trap_value_2), $elapsed, $ip, $rate_scope);
         }
 
-        if ($this->config->get('captcha_honeypot_js_check_status')) {
-            $js_name = '_hp_js_' . substr(hash('sha256', $token . ':js'), 0, 8);
-            $expected = substr(hash('sha256', $token . ':ok'), 0, 20);
-            $actual = isset($this->request->post[$js_name]) ? (string)$this->request->post[$js_name] : '';
-
-            if ($actual === '' || !hash_equals($expected, $actual)) {
-                return $this->reject('js_check', '', $elapsed, $ip, $rate_scope);
-            }
-        }
-
-        if ($this->config->get('captcha_honeypot_time_check_status')) {
-            $min_seconds = max(0, (int)$this->config->get('captcha_honeypot_min_seconds'));
-            if ($min_seconds > 0 && $elapsed < $min_seconds) {
-                return $this->reject('too_fast', '', $elapsed, $ip, $rate_scope);
-            }
-        }
-
         if ($this->isRegistrationSubmission($route) && $this->config->get('captcha_honeypot_phone_check_status')) {
             if (!$this->validateRegistrationPhone()) {
                 $this->reject('invalid_phone', $this->getRegistrationPhone(), $elapsed, $ip, $rate_scope, false);
@@ -137,8 +121,27 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             }
         }
 
-        if ($this->shouldVerifyYandexRegistration() && !$this->verifyYandexSmartCaptcha()) {
-            return $this->reject('yandex_failed', $this->yandexError, $elapsed, $ip, $rate_scope);
+        if ($yandex_required) {
+            if (!$this->verifyYandexSmartCaptcha()) {
+                return $this->reject('yandex_failed', $this->yandexError, $elapsed, $ip, $rate_scope);
+            }
+        } else {
+            if ($this->config->get('captcha_honeypot_js_check_status')) {
+                $js_name = '_hp_js_' . substr(hash('sha256', $token . ':js'), 0, 8);
+                $expected = substr(hash('sha256', $token . ':ok'), 0, 20);
+                $actual = isset($this->request->post[$js_name]) ? (string)$this->request->post[$js_name] : '';
+
+                if ($actual === '' || !hash_equals($expected, $actual)) {
+                    return $this->reject('js_check', '', $elapsed, $ip, $rate_scope);
+                }
+            }
+
+            if ($this->config->get('captcha_honeypot_time_check_status')) {
+                $min_seconds = max(0, (int)$this->config->get('captcha_honeypot_min_seconds'));
+                if ($min_seconds > 0 && $elapsed < $min_seconds) {
+                    return $this->reject('too_fast', '', $elapsed, $ip, $rate_scope);
+                }
+            }
         }
 
         $this->clearRateLimit($ip, $rate_scope);

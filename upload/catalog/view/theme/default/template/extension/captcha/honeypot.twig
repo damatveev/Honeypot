@@ -12,7 +12,7 @@
 </fieldset>
 {% endif %}
 
-<div class="hp-antispam" aria-hidden="true" style="position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;">
+<div class="hp-antispam" data-honeypot-version="1.3.5" aria-hidden="true" style="position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;">
   <label for="{{ field_name }}">Website</label>
   <input type="text" id="{{ field_name }}" name="{{ field_name }}" value="" tabindex="-1" autocomplete="off" autocapitalize="off" spellcheck="false">
   <label for="{{ field_name_2 }}">Company</label>
@@ -25,9 +25,7 @@
 
   var node = document.querySelector('input[name="{{ js_name }}"][data-hp-js-proof]');
   if (node) {
-    window.setTimeout(function() {
-      node.value = node.getAttribute('data-hp-js-proof');
-    }, 600);
+    node.value = node.getAttribute('data-hp-js-proof');
   }
 })();
 </script>
