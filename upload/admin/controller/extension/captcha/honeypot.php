@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionCaptchaHoneypot extends Controller {
-    const VERSION = '1.1.0';
+    const VERSION = '1.2.0';
     private $error = array();
 
     public function index() {
@@ -14,8 +14,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
             $settings = array(
                 'captcha_honeypot_status' => !empty($this->request->post['captcha_honeypot_status']) ? 1 : 0,
-                'captcha_honeypot_min_seconds' => isset($this->request->post['captcha_honeypot_min_seconds']) ? max(0, min(30, (int)$this->request->post['captcha_honeypot_min_seconds'])) : 2,
+                'captcha_honeypot_min_seconds' => isset($this->request->post['captcha_honeypot_min_seconds']) ? max(0, min(30, (int)$this->request->post['captcha_honeypot_min_seconds'])) : 5,
                 'captcha_honeypot_time_check_status' => !empty($this->request->post['captcha_honeypot_time_check_status']) ? 1 : 0,
+                'captcha_honeypot_js_check_status' => !empty($this->request->post['captcha_honeypot_js_check_status']) ? 1 : 0,
+                'captcha_honeypot_token_ttl' => isset($this->request->post['captcha_honeypot_token_ttl']) ? max(60, min(7200, (int)$this->request->post['captcha_honeypot_token_ttl'])) : 1800,
+                'captcha_honeypot_rate_limit_status' => !empty($this->request->post['captcha_honeypot_rate_limit_status']) ? 1 : 0,
+                'captcha_honeypot_rate_limit' => isset($this->request->post['captcha_honeypot_rate_limit']) ? max(1, min(100, (int)$this->request->post['captcha_honeypot_rate_limit'])) : 6,
+                'captcha_honeypot_rate_window' => isset($this->request->post['captcha_honeypot_rate_window']) ? max(60, min(86400, (int)$this->request->post['captcha_honeypot_rate_window'])) : 900,
+                'captcha_honeypot_block_seconds' => isset($this->request->post['captcha_honeypot_block_seconds']) ? max(60, min(86400, (int)$this->request->post['captcha_honeypot_block_seconds'])) : 1800,
                 'captcha_honeypot_log_status' => !empty($this->request->post['captcha_honeypot_log_status']) ? 1 : 0,
                 'captcha_honeypot_retention_days' => isset($this->request->post['captcha_honeypot_retention_days']) ? max(1, min(3650, (int)$this->request->post['captcha_honeypot_retention_days'])) : 90
             );
@@ -37,8 +43,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
 
         $defaults = array(
             'captcha_honeypot_status' => 0,
-            'captcha_honeypot_min_seconds' => 2,
+            'captcha_honeypot_min_seconds' => 5,
             'captcha_honeypot_time_check_status' => 1,
+            'captcha_honeypot_js_check_status' => 1,
+            'captcha_honeypot_token_ttl' => 1800,
+            'captcha_honeypot_rate_limit_status' => 1,
+            'captcha_honeypot_rate_limit' => 6,
+            'captcha_honeypot_rate_window' => 900,
+            'captcha_honeypot_block_seconds' => 1800,
             'captcha_honeypot_log_status' => 1,
             'captcha_honeypot_retention_days' => 90
         );
@@ -87,13 +99,7 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $data['pagination'] = $pagination->render();
 
         $pages = $data['log_total'] ? (int)ceil($data['log_total'] / $limit) : 0;
-        $data['results'] = sprintf(
-            $this->language->get('text_pagination'),
-            $data['log_total'] ? (($page - 1) * $limit) + 1 : 0,
-            min($page * $limit, $data['log_total']),
-            $data['log_total'],
-            $pages
-        );
+        $data['results'] = sprintf($this->language->get('text_pagination'), $data['log_total'] ? (($page - 1) * $limit) + 1 : 0, min($page * $limit, $data['log_total']), $data['log_total'], $pages);
 
         $data['breadcrumbs'] = array();
         $data['breadcrumbs'][] = array('text' => $this->language->get('text_home'), 'href' => $this->url->link('common/dashboard', 'user_token=' . $this->session->data['user_token'], true));
@@ -126,8 +132,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
 
         $this->model_setting_setting->editSetting('captcha_honeypot', array(
             'captcha_honeypot_status' => 0,
-            'captcha_honeypot_min_seconds' => 2,
+            'captcha_honeypot_min_seconds' => 5,
             'captcha_honeypot_time_check_status' => 1,
+            'captcha_honeypot_js_check_status' => 1,
+            'captcha_honeypot_token_ttl' => 1800,
+            'captcha_honeypot_rate_limit_status' => 1,
+            'captcha_honeypot_rate_limit' => 6,
+            'captcha_honeypot_rate_window' => 900,
+            'captcha_honeypot_block_seconds' => 1800,
             'captcha_honeypot_log_status' => 1,
             'captcha_honeypot_retention_days' => 90
         ));
@@ -140,7 +152,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
 
     public function clear() {
         $this->load->language('extension/captcha/honeypot');
-
         if (!$this->user->hasPermission('modify', 'extension/captcha/honeypot')) {
             $this->session->data['error_warning'] = $this->language->get('error_permission');
         } else {
@@ -149,7 +160,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             $this->model_extension_captcha_honeypot->clearLogs();
             $this->session->data['success'] = $this->language->get('text_log_cleared');
         }
-
         $this->response->redirect($this->url->link('extension/captcha/honeypot', 'user_token=' . $this->session->data['user_token'], true));
     }
 
@@ -157,7 +167,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         if (!$this->user->hasPermission('modify', 'extension/captcha/honeypot')) {
             $this->error['warning'] = $this->language->get('error_permission');
         }
-
         return !$this->error;
     }
 }
