@@ -41,8 +41,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $data['yandex_enabled'] = false;
         $data['yandex_site_key'] = '';
         $data['yandex_error'] = '';
-        $data['phone_ru_enabled'] = (bool)$this->config->get('captcha_honeypot_phone_check_status')
-            && (bool)$this->config->get('captcha_honeypot_phone_ru_status');
 
         if ($this->shouldRenderYandexRegistration()) {
             $keys = $this->getYandexKeys();
