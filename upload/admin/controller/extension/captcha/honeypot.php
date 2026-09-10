@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionCaptchaHoneypot extends Controller {
-    const VERSION = '1.2.0';
+    const VERSION = '1.3.0';
     private $error = array();
 
     public function index() {
@@ -22,6 +22,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
                 'captcha_honeypot_rate_limit' => isset($this->request->post['captcha_honeypot_rate_limit']) ? max(1, min(100, (int)$this->request->post['captcha_honeypot_rate_limit'])) : 6,
                 'captcha_honeypot_rate_window' => isset($this->request->post['captcha_honeypot_rate_window']) ? max(60, min(86400, (int)$this->request->post['captcha_honeypot_rate_window'])) : 900,
                 'captcha_honeypot_block_seconds' => isset($this->request->post['captcha_honeypot_block_seconds']) ? max(60, min(86400, (int)$this->request->post['captcha_honeypot_block_seconds'])) : 1800,
+                'captcha_honeypot_phone_check_status' => !empty($this->request->post['captcha_honeypot_phone_check_status']) ? 1 : 0,
+                'captcha_honeypot_phone_ru_status' => !empty($this->request->post['captcha_honeypot_phone_ru_status']) ? 1 : 0,
+                'captcha_honeypot_yandex_status' => !empty($this->request->post['captcha_honeypot_yandex_status']) ? 1 : 0,
+                'captcha_honeypot_yandex_source' => (isset($this->request->post['captcha_honeypot_yandex_source']) && $this->request->post['captcha_honeypot_yandex_source'] === 'standard') ? 'standard' : 'custom',
+                'captcha_honeypot_yandex_key' => isset($this->request->post['captcha_honeypot_yandex_key']) ? trim($this->request->post['captcha_honeypot_yandex_key']) : '',
+                'captcha_honeypot_yandex_secret' => isset($this->request->post['captcha_honeypot_yandex_secret']) ? trim($this->request->post['captcha_honeypot_yandex_secret']) : '',
+                'captcha_honeypot_yandex_register_status' => !empty($this->request->post['captcha_honeypot_yandex_register_status']) ? 1 : 0,
+                'captcha_honeypot_log_success_status' => !empty($this->request->post['captcha_honeypot_log_success_status']) ? 1 : 0,
                 'captcha_honeypot_log_status' => !empty($this->request->post['captcha_honeypot_log_status']) ? 1 : 0,
                 'captcha_honeypot_retention_days' => isset($this->request->post['captcha_honeypot_retention_days']) ? max(1, min(3650, (int)$this->request->post['captcha_honeypot_retention_days'])) : 90
             );
@@ -51,6 +59,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             'captcha_honeypot_rate_limit' => 6,
             'captcha_honeypot_rate_window' => 900,
             'captcha_honeypot_block_seconds' => 1800,
+            'captcha_honeypot_phone_check_status' => 1,
+            'captcha_honeypot_phone_ru_status' => 1,
+            'captcha_honeypot_yandex_status' => 0,
+            'captcha_honeypot_yandex_source' => 'standard',
+            'captcha_honeypot_yandex_key' => '',
+            'captcha_honeypot_yandex_secret' => '',
+            'captcha_honeypot_yandex_register_status' => 1,
+            'captcha_honeypot_log_success_status' => 0,
             'captcha_honeypot_log_status' => 1,
             'captcha_honeypot_retention_days' => 90
         );
@@ -63,6 +79,8 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
                 $data[$key] = ($value === null || $value === '') ? $default : $value;
             }
         }
+
+        $data['standard_yandex_available'] = (bool)($this->config->get('captcha_yandex_key') && $this->config->get('captcha_yandex_secret'));
 
         $filter_email = isset($this->request->get['filter_email']) ? trim($this->request->get['filter_email']) : '';
         $filter_ip = isset($this->request->get['filter_ip']) ? trim($this->request->get['filter_ip']) : '';
@@ -110,7 +128,6 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $data['filter_action'] = 'index.php';
         $data['clear'] = $this->url->link('extension/captcha/honeypot/clear', 'user_token=' . $this->session->data['user_token'], true);
         $data['cancel'] = $this->url->link('marketplace/extension', 'user_token=' . $this->session->data['user_token'] . '&type=captcha', true);
-
         $data['donate_url'] = 'https://boosty.to/matveevd/donate';
         $data['donate_qr'] = 'view/image/extension/captcha/honeypot_donate.png';
         $data['version'] = self::VERSION;
@@ -125,11 +142,9 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
         $this->load->model('user/user_group');
         $this->load->model('setting/setting');
         $this->load->model('extension/captcha/honeypot');
-
         $this->model_user_user_group->addPermission($this->user->getGroupId(), 'access', 'extension/captcha/honeypot');
         $this->model_user_user_group->addPermission($this->user->getGroupId(), 'modify', 'extension/captcha/honeypot');
         $this->model_extension_captcha_honeypot->install();
-
         $this->model_setting_setting->editSetting('captcha_honeypot', array(
             'captcha_honeypot_status' => 0,
             'captcha_honeypot_min_seconds' => 5,
@@ -140,6 +155,14 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
             'captcha_honeypot_rate_limit' => 6,
             'captcha_honeypot_rate_window' => 900,
             'captcha_honeypot_block_seconds' => 1800,
+            'captcha_honeypot_phone_check_status' => 1,
+            'captcha_honeypot_phone_ru_status' => 1,
+            'captcha_honeypot_yandex_status' => 0,
+            'captcha_honeypot_yandex_source' => 'standard',
+            'captcha_honeypot_yandex_key' => '',
+            'captcha_honeypot_yandex_secret' => '',
+            'captcha_honeypot_yandex_register_status' => 1,
+            'captcha_honeypot_log_success_status' => 0,
             'captcha_honeypot_log_status' => 1,
             'captcha_honeypot_retention_days' => 90
         ));
@@ -166,7 +189,22 @@ class ControllerExtensionCaptchaHoneypot extends Controller {
     protected function validate() {
         if (!$this->user->hasPermission('modify', 'extension/captcha/honeypot')) {
             $this->error['warning'] = $this->language->get('error_permission');
+            return false;
         }
+
+        if (!empty($this->request->post['captcha_honeypot_yandex_status']) && !empty($this->request->post['captcha_honeypot_yandex_register_status'])) {
+            $source = isset($this->request->post['captcha_honeypot_yandex_source']) ? $this->request->post['captcha_honeypot_yandex_source'] : 'custom';
+            if ($source === 'custom') {
+                if (empty(trim((string)$this->request->post['captcha_honeypot_yandex_key'])) || empty(trim((string)$this->request->post['captcha_honeypot_yandex_secret']))) {
+                    $this->error['warning'] = $this->language->get('error_yandex_keys');
+                }
+            } else {
+                if (!$this->config->get('captcha_yandex_key') || !$this->config->get('captcha_yandex_secret')) {
+                    $this->error['warning'] = $this->language->get('error_yandex_standard');
+                }
+            }
+        }
+
         return !$this->error;
     }
 }
