@@ -2,7 +2,7 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.4.0</version>
+  <version>1.4.1</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
 
@@ -142,6 +142,32 @@
                 }
       ]]></add>
     </operation>
+    <operation error="skip">
+      <search><![CDATA[$this->response->setOutput($this->load->view('extension/module/uni_'.$type, $data));]]></search>
+      <add position="replace"><![CDATA[
+            $uni_modal_content = $this->load->view('extension/module/uni_' . $type, $data);
+
+            // Some UniShop2 themes omit {{ captcha }} from the popup template.
+            // Put the Honeypot block into the registration form as a server-side fallback.
+            if ($type === 'register'
+                && $this->config->get('captcha_honeypot_status')
+                && strpos($uni_modal_content, 'data-honeypot-version=') === false) {
+                $honeypot_content = $this->load->controller('extension/captcha/honeypot');
+                if ($honeypot_content) {
+                    $uni_modal_content = preg_replace_callback(
+                        '/(<form[^>]*class=["\'][^"\']*popup_register[^"\']*["\'][^>]*>)/i',
+                        function ($matches) use ($honeypot_content) {
+                            return $matches[1] . $honeypot_content;
+                        },
+                        $uni_modal_content,
+                        1
+                    );
+                }
+            }
+
+            $this->response->setOutput($uni_modal_content);
+      ]]></add>
+    </operation>
   </file>
 
   <file path="catalog/model/account/customer.php">
@@ -161,12 +187,13 @@
 
   <file path="catalog/controller/checkout/register.php">
     <operation error="skip"><search><![CDATA[$data['captcha'] = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha'));]]></search><add position="after"><![CDATA[
-            if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+            if ($this->config->get('captcha_honeypot_status')
+                && strpos((string)$data['captcha'], 'data-honeypot-version=') === false) {
                 $data['captcha'] .= $this->load->controller('extension/captcha/honeypot');
             }
     ]]></add></operation>
     <operation error="skip"><search><![CDATA[$captcha = $this->load->controller('extension/captcha/' . $this->config->get('config_captcha') . '/validate');]]></search><add position="after"><![CDATA[
-                if ($this->config->get('captcha_honeypot_status') && $this->config->get('config_captcha') != 'honeypot') {
+                if ($this->config->get('captcha_honeypot_status')) {
                     $honeypot = $this->load->controller('extension/captcha/honeypot/validate');
                     if ($honeypot) { $json['error']['captcha'] = $honeypot; }
                 }
@@ -229,3 +256,4 @@
     ]]></add></operation>
   </file>
 </modification>
+
