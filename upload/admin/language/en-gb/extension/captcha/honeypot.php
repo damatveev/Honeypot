@@ -18,7 +18,7 @@ $_['text_unique_email'] = 'Unique e-mails';
 $_['text_log_cleared'] = 'Honeypot log cleared.';
 $_['text_no_results'] = 'No records yet.';
 $_['text_pagination'] = 'Showing %d to %d of %d (%d Pages)';
-$_['text_how_it_works'] = 'Honeypot Anti-Spam 1.4.0 combines hidden anti-bot checks, rate limiting, server-side phone validation and Yandex SmartCaptcha.';
+$_['text_how_it_works'] = 'Honeypot Anti-Spam 1.4.1 combines hidden anti-bot checks, rate limiting, server-side phone validation and Yandex SmartCaptcha.';
 $_['text_privacy'] = 'The log stores technical request data, submitted name/e-mail and result reason. Passwords and message bodies are never stored.';
 $_['text_yandex_standard'] = 'Use keys from the standard Yandex module';
 $_['text_yandex_custom'] = 'Use Honeypot custom keys';
@@ -92,3 +92,4 @@ $_['help_enable'] = 'After upgrading, save the module settings and refresh the m
 $_['error_permission'] = 'You do not have permission to modify Honeypot Anti-Spam.';
 $_['error_yandex_keys'] = 'Custom Yandex SmartCaptcha requires both Site key and Secret key.';
 $_['error_yandex_standard'] = 'Standard Yandex module is selected, but its Site key/Secret key were not found.';
+
