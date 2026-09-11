@@ -1,15 +1,15 @@
 # Honeypot Anti-Spam CAPTCHA for OpenCart 3 / LiveStore
 
-[![Version](https://img.shields.io/badge/version-1.4.1-blue.svg)](https://github.com/damatveev/Honeypot/releases)
+[![Version](https://img.shields.io/badge/version-1.4.2-blue.svg)](https://github.com/damatveev/Honeypot/releases)
 [![OpenCart](https://img.shields.io/badge/OpenCart-3.x-blue.svg)](https://www.opencart.com/)
 [![PHP](https://img.shields.io/badge/PHP-7.2--8.1-777bb4.svg)](https://www.php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Honeypot Anti-Spam CAPTCHA 1.4.1** — многоуровневая защита регистрации и стандартных и AJAX-форм OpenCart 3.x / LiveStore, включая Simple и Uni Login Register. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
+**Honeypot Anti-Spam CAPTCHA 1.4.2** — многоуровневая защита регистрации и стандартных и AJAX-форм OpenCart 3.x / LiveStore, включая Simple и Uni Login Register. Модуль объединяет динамические honeypot-поля, JavaScript-проверку, одноразовые токены, контроль времени заполнения, rate limit, серверную проверку телефона и Yandex SmartCaptcha.
 
 ## Yandex SmartCaptcha
 
-В версии 1.4.1 добавлена защита модального окна Uni Login Register и стандартного checkout/register.
+В версии 1.4.2 исправлено добавление защиты в модальную форму UniShop2 с классом `modal-register__form`.
 
 Доступны два режима:
 
@@ -65,7 +65,7 @@
 
 ## Установка
 
-1. Скачайте `dist/honeypot_antispam_captcha_v1.4.1.ocmod.zip`.
+1. Скачайте `dist/honeypot_antispam_captcha_v1.4.2.ocmod.zip`.
 2. Откройте `Дополнения → Установка дополнений` и загрузите ZIP.
 3. Перейдите в `Дополнения → Дополнения → CAPTCHA`.
 4. Установите и откройте **Honeypot Anti-Spam**.
