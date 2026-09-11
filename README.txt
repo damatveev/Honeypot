@@ -1,6 +1,6 @@
 Honeypot Anti-Spam CAPTCHA for OpenCart / LiveStore
 
-Версия 1.4.1
+Версия 1.4.2
 
 Усиленная антиспам-защита регистрации для OpenCart 3.x / LiveStore.
 
@@ -26,7 +26,7 @@ Yandex SmartCaptcha
 
 Установка
 
-1. Скачайте dist/honeypot_antispam_captcha_v1.4.1.ocmod.zip.
+1. Скачайте dist/honeypot_antispam_captcha_v1.4.2.ocmod.zip.
 2. Дополнения → Установка дополнений → загрузите ZIP.
 3. Дополнения → Дополнения → тип CAPTCHA.
 4. Установите и откройте Honeypot Anti-Spam.
