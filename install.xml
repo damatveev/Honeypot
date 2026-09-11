@@ -2,7 +2,7 @@
 <modification>
   <name>Honeypot Anti-Spam CAPTCHA</name>
   <code>honeypot_antispam_captcha</code>
-  <version>1.4.1</version>
+  <version>1.4.2</version>
   <author>Dmitry Matveev &lt;d.a.matveev@gmail.com&gt;</author>
   <link>https://boosty.to/matveevd/donate</link>
 
@@ -155,7 +155,7 @@
                 $honeypot_content = $this->load->controller('extension/captcha/honeypot');
                 if ($honeypot_content) {
                     $uni_modal_content = preg_replace_callback(
-                        '/(<form[^>]*class=["\'][^"\']*popup_register[^"\']*["\'][^>]*>)/i',
+                        '/(<form[^>]*class=["\'][^"\']*(?:popup_register|modal-register__form)[^"\']*["\'][^>]*>)/i',
                         function ($matches) use ($honeypot_content) {
                             return $matches[1] . $honeypot_content;
                         },
