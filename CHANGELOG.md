@@ -1,5 +1,9 @@
 # Changelog
 
+# 1.4.2
+
+- Исправлен fallback для модального окна Uni Login Register с классом `modal-register__form`, используемым на iasv.ru.
+
 # 1.4.1
 
 - Исправлено отображение Honeypot и Yandex SmartCaptcha в модальном окне Uni Login Register, даже если тема UniShop2 не выводит `{{ captcha }}`.
