@@ -109,6 +109,8 @@ E-mail: d.a.matveev@gmail.com
 
 Поддержать разработку: https://boosty.to/matveevd/donate
 
+<a href="https://boosty.to/matveevd/donate"><img src="https://github.com/user-attachments/assets/8b047ffb-8baf-486f-aaf9-9223119262f7" alt="QR-код для поддержки разработки" width="160"></a>
+
 ## Лицензия
 
 MIT.
